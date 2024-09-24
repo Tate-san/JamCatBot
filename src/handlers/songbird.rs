@@ -1,0 +1,20 @@
+use songbird::events::{Event, EventContext, EventHandler as VoiceEventHandler};
+
+pub struct TrackErrorNotifier;
+
+#[serenity::async_trait]
+impl VoiceEventHandler for TrackErrorNotifier {
+    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
+        if let EventContext::Track(track_list) = ctx {
+            for (state, handle) in *track_list {
+                tracing::error!(
+                    "Track {:?} encountered an error: {:?}",
+                    handle.uuid(),
+                    state.playing
+                );
+            }
+        }
+
+        None
+    }
+}
