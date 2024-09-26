@@ -5,8 +5,11 @@ pub async fn yapper(
     ctx: Context<'_>,
     #[description = "Who's the yapper"] user: serenity::User,
 ) -> Result<(), Error> {
-    ctx.say(format!("{} is the biggest yapper of em all", user.name))
-        .await?;
+    ctx.send_message(Message::Other(format!(
+        "{} is the biggest yapper of em all",
+        user.name
+    )))
+    .await?;
 
     user.direct_message(
         ctx.http(),

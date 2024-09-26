@@ -1,10 +1,14 @@
 mod api;
 mod commands;
+pub mod downloaders;
 mod handlers;
-mod http_utils;
 pub mod messages;
+pub mod music;
+mod poise_extension;
 mod prelude;
 mod types;
+mod utils;
+mod voice;
 
 use prelude::*;
 use std::env;
@@ -25,6 +29,7 @@ async fn main() {
         .options(poise::FrameworkOptions {
             commands: vec![
                 commands::general::help(),
+                commands::general::test(),
                 commands::animals::cat(),
                 commands::animals::dog(),
                 commands::naughty::naughty(),

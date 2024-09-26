@@ -32,14 +32,63 @@ pub async fn naughty(
             let link = list.gifs[random_gif].urls.hd.clone().unwrap_or_default();
 
             ctx.say(link).await?;
-
-            Ok(())
         }
         Err(error) => {
             tracing::error!("Tags: {:?}", tags);
-            Err(error.into())
+            ctx.send_message(Message::Error(error.to_string())).await?;
         }
     }
+
+    Ok(())
+}
+
+async fn coomer_creator_random_image(
+    api: &api::CoomerApi,
+    creator: api::coomer::types::CreatorInfo,
+) -> anyhow::Result<String> {
+    let posts = api.creator_posts(&creator).await?;
+
+    let mut files = vec![];
+
+    for post in posts {
+        if let Some(file) = post.file {
+            files.push(file.clone());
+        }
+
+        for attachment in post.attachments {
+            files.push(attachment.clone());
+        }
+    }
+
+    // Yeet out all videos
+    let files = files
+        .iter()
+        .filter_map(|item| {
+            if item.path.ends_with("png")
+                || item.path.ends_with("jpg")
+                || item.path.ends_with("jpeg")
+            {
+                Some(item.clone())
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<api::coomer::types::FileInfo>>();
+
+    if files.is_empty() {
+        return Err(anyhow::anyhow!(
+            "{} ({}) has no content",
+            &creator.name,
+            &creator.service
+        ));
+    }
+
+    let files_length = files.len();
+    let random_file = rand::thread_rng().gen_range(0..files_length);
+
+    let file = &files[random_file];
+
+    Ok(api.get_file_url(&file.path).await?)
 }
 
 #[poise::command(
@@ -62,58 +111,38 @@ pub async fn creator(
     let creators = api.creators_cached().await?;
     let creator = match api.find_creator_by_name(&name, &creators).await {
         Some(c) => c,
-        None => return Err(anyhow::anyhow!("{name} has not been found").into()),
+        None => {
+            ctx.send_message(Message::Error(format!("{name} has not been found")))
+                .await?;
+
+            return Ok(());
+        }
     };
 
-    let posts = api.creator_posts(&creator).await?;
-
-    let mut files = vec![];
-
-    for post in posts {
-        if let Some(file) = post.file {
-            files.push(file.clone());
+    let image_url = match coomer_creator_random_image(&api, creator.clone()).await {
+        Ok(url) => url,
+        Err(error) => {
+            ctx.send_message(Message::Error(error.to_string())).await?;
+            return Ok(());
         }
+    };
 
-        for attachment in post.attachments {
-            files.push(attachment.clone());
-        }
-    }
+    let creator_url = api.get_creator_url(&creator);
+    let creator_icon_url = api.get_creator_icon_url(&creator);
 
-    if files.is_empty() {
-        return Err(anyhow::anyhow!("{name} ({}) has no content", &creator.service).into());
-    }
+    let embed = messages::factory::create_coomer_image_embed(
+        &creator,
+        image_url,
+        creator_url,
+        creator_icon_url,
+    );
 
-    let files_length = files.len();
-    let random_file = rand::thread_rng().gen_range(0..files_length);
-
-    let file = &files[random_file];
-
-    let file_url = api.get_file_url(&file.path).await?;
-
-    ctx.send(
-        poise::CreateReply::default().embed(
-            serenity::CreateEmbed::new()
-                .url(&file_url)
-                .image(&file_url)
-                .title("Content")
-                .author(
-                    serenity::CreateEmbedAuthor::new(&creator.name)
-                        .url(api.get_creator_url(&creator))
-                        .icon_url(api.get_creator_icon_url(&creator)),
-                )
-                .field("Service", &creator.service, false)
-                .field("Popularity", format!("{}", creator.favorited), false)
-                .color(serenity::Colour::MEIBE_PINK),
-        ),
-    )
-    .await?;
+    ctx.send_embed(embed).await?;
     Ok(())
 }
 
 #[poise::command(prefix_command, slash_command, category = "NSFW")]
 pub async fn random(ctx: Context<'_>) -> Result<(), Error> {
-    tracing::info!("Fetching creators");
-    let reply = ctx.say("Searching for goodies").await?;
     let api = api::CoomerApi::new()?;
     let creators = api.creators_cached().await?;
     let creators_len = creators.len();
@@ -123,78 +152,24 @@ pub async fn random(ctx: Context<'_>) -> Result<(), Error> {
 
         let creator = creators[random_creator].clone();
 
-        tracing::info!("Searching for content of {}", &creator.name);
-        reply
-            .edit(
-                ctx,
-                poise::CreateReply::default()
-                    .content(format!("Browsing thru {}'s naughties", &creator.name)),
-            )
-            .await?;
-
-        let posts = api.creator_posts(&creator).await?;
-
-        let mut files = vec![];
-
-        for post in posts {
-            if let Some(file) = post.file {
-                files.push(file.clone());
+        let image_url = match coomer_creator_random_image(&api, creator.clone()).await {
+            Ok(url) => url,
+            Err(_) => {
+                continue;
             }
+        };
 
-            for attachment in post.attachments {
-                files.push(attachment.clone());
-            }
-        }
+        let creator_url = api.get_creator_url(&creator);
+        let creator_icon_url = api.get_creator_icon_url(&creator);
 
-        if files.is_empty() {
-            tracing::warn!("{} has no content, trying another", &creator.name);
-            reply
-                .edit(
-                    ctx,
-                    poise::CreateReply::default()
-                        .content(format!("{} has no goodies, trying another", &creator.name)),
-                )
-                .await?;
-            continue;
-        }
+        let embed = messages::factory::create_coomer_image_embed(
+            &creator,
+            image_url,
+            creator_url,
+            creator_icon_url,
+        );
 
-        let files_length = files.len();
-        let random_file = rand::thread_rng().gen_range(0..files_length);
-
-        let file = &files[random_file];
-        tracing::info!("Getting file URL");
-
-        reply
-            .edit(
-                ctx,
-                poise::CreateReply::default().content("Found sauce, downloading"),
-            )
-            .await?;
-        let file_url = api.get_file_url(&file.path).await?;
-
-        tracing::info!("Serving sauce {}", file_url);
-
-        reply
-            .edit(
-                ctx,
-                poise::CreateReply::default()
-                    .embed(
-                        serenity::CreateEmbed::new()
-                            .url(&file_url)
-                            .image(&file_url)
-                            .title("Content")
-                            .author(
-                                serenity::CreateEmbedAuthor::new(&creator.name)
-                                    .url(api.get_creator_url(&creator))
-                                    .icon_url(api.get_creator_icon_url(&creator)),
-                            )
-                            .field("Service", &creator.service, false)
-                            .field("Popularity", format!("{}", creator.favorited), false)
-                            .color(serenity::Colour::MEIBE_PINK),
-                    )
-                    .content(""),
-            )
-            .await?;
+        ctx.send_embed(embed).await?;
 
         return Ok(());
     }
