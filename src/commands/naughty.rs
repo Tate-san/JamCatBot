@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use rand::Rng;
 
 use super::prelude::*;
@@ -34,8 +35,10 @@ pub async fn naughty(
             ctx.say(link).await?;
         }
         Err(error) => {
-            tracing::error!("Tags: {:?}", tags);
-            ctx.send_message(Message::Error(error.to_string())).await?;
+            tracing::error!("Invalid tags: {:?}", tags);
+            return Err(anyhow::anyhow!(error.to_string()).into());
+
+            //ctx.send_message(Message::Error(error.to_string())).await?;
         }
     }
 

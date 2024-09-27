@@ -4,22 +4,23 @@ use songbird::Call;
 use songbird::TrackEvent;
 use tokio::sync::Mutex;
 
+use crate::error::BotError;
 use crate::handlers;
 use crate::prelude::*;
 use crate::types::*;
 
-pub async fn get_call_or_join(ctx: &Context<'_>) -> anyhow::Result<Arc<Mutex<Call>>> {
+pub async fn get_call_or_join(ctx: &Context<'_>) -> Result<Arc<Mutex<Call>>, Error> {
     let guild = ctx.guild().unwrap().clone();
 
     let user_voice_state = if let Some(voice_state) = ctx.get_author_voice_state().await {
         voice_state
     } else {
-        return Err(anyhow::anyhow!("You have to be in a voice channel"));
+        return Err(Box::new(BotError::NotInVoice));
     };
 
     let manager = ctx.data().songbird.clone();
 
-    anyhow::Ok(match ctx.get_bot_call().await {
+    Ok(match ctx.get_bot_call().await {
         Ok(handler) => handler,
         Err(_) => {
             let handler = manager

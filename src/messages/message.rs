@@ -97,3 +97,11 @@ impl From<Message> for MessageParams {
         MessageParams::new(value.clone()).with_color(value.into())
     }
 }
+
+impl From<Message> for CreateEmbed {
+    fn from(value: Message) -> Self {
+        CreateEmbed::new()
+            .colour::<Colour>((&value).into())
+            .description(&value.to_string())
+    }
+}

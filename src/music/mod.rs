@@ -1,80 +1,126 @@
 pub mod types;
 
-use crate::downloaders::ytdl::Ytdl;
 use crate::messages;
 use crate::prelude::*;
+use crate::sources::ytdl::Ytdl;
 use crate::types::*;
+use anyhow::anyhow;
 use anyhow::Result;
+use lazy_static::lazy_static;
+use regex::Regex;
 use songbird::input::Compose;
+use songbird::input::YoutubeDl;
+use songbird::tracks::TrackHandle;
+use std::str::FromStr;
 use types::QueryType;
 use types::TrackInfo;
+use url::Url;
 
-pub async fn play_url(ctx: &Context<'_>, query: String) -> Result<()> {
+lazy_static! {
+    // Regex for keywords that indicate the url is a playlist
+    pub static ref PLAYLIST_URL_REGEX: Regex = Regex::new(r"list=").unwrap();
+}
+
+/// Main function for playing tracks.
+pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<()> {
     let call = ctx.get_bot_call().await?;
-    let query_type = QueryType::from_url(query);
+    let query_type = match_query(query).await?;
 
-    let mut url_list: Vec<String> = vec![];
+    let queue_len = call.lock().await.queue().len();
 
     match query_type {
-        QueryType::Other(url) | QueryType::Youtube(url) => {
-            url_list.push(url);
+        QueryType::TrackLink(url) => {
+            let (_, track_info) = enqueue_back(ctx, url).await?;
+
+            if queue_len >= 1 {
+                ctx.send_embed(messages::factory::create_queued_track_embed(track_info))
+                    .await?;
+            }
         }
-        QueryType::YoutubePlaylist(url) => {
+        QueryType::PlaylistLink(url) => {
             let ytdl = Ytdl::new();
-            let playlist = ytdl.get_playlist_items(url).await?;
+            let playlist = ytdl.query_playlist(&url).await?;
+            let playlist_len = playlist.len();
 
             for item in playlist {
-                url_list.push(item.url);
+                let _ = enqueue_back(ctx, item.url).await?;
             }
-        }
-        _ => {
-            return Err(anyhow::anyhow!("I don't know what to do with this shit"));
-        }
-    }
 
-    let mut handler = call.lock().await;
-
-    let initial_queue_len = handler.queue().len();
-    let url_list_len = url_list.len();
-    let mut first_track = None;
-
-    for url in url_list {
-        let mut src = songbird::input::YoutubeDl::new(ctx.data().http.clone(), url.clone());
-
-        let metadata = match src.aux_metadata().await {
-            Ok(res) => res,
-            Err(_) => {
-                return Err(anyhow::anyhow!("Unable to fetch metadata"));
-            }
-        };
-
-        let track_handle = handler.enqueue(src.into()).await;
-        let mut typemap = track_handle.typemap().write().await;
-
-        let track_info = TrackInfo {
-            url: url.clone(),
-            title: metadata.title.clone().unwrap_or("Unknown".to_string()),
-            thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
-            duration: metadata.duration.clone(),
-        };
-
-        if first_track.is_none() {
-            first_track = Some(track_info.clone());
-        }
-
-        typemap.insert::<TrackInfo>(track_info);
-    }
-
-    if initial_queue_len > 0 {
-        if url_list_len == 1 {
-            let track_info = first_track.unwrap();
-            ctx.send_embed(messages::factory::create_queued_track_embed(track_info))
-                .await?;
-        } else {
-            ctx.send_embed(messages::factory::create_queued_tracks_embed(url_list_len))
+            ctx.send_embed(messages::factory::create_queued_tracks_embed(playlist_len))
                 .await?;
         }
-    }
+        QueryType::Keywords(query) => {
+            let ytdl = Ytdl::new();
+            let list = ytdl.search(&query, None).await?;
+
+            if list.is_empty() {
+                ctx.send_message(Message::Error("No such bullshit found".to_string()))
+                    .await?;
+                return anyhow::Ok(());
+            }
+
+            let (_, track_info) = enqueue_back(ctx, list[0].url.clone()).await?;
+
+            if queue_len >= 1 {
+                ctx.send_embed(messages::factory::create_queued_track_embed(track_info))
+                    .await?;
+            }
+        }
+        _ => todo!("Not done yet"),
+    };
 
     anyhow::Ok(())
+}
+
+/// Matches the query string to corresponding QueryType.
+///
+/// Also handles extraction from ytdl unsupported sites like spotify.
+async fn match_query(query: String) -> Result<QueryType> {
+    anyhow::Ok(match Url::from_str(&query) {
+        Ok(url) => match url.domain() {
+            Some("open.spotify.com") => todo!(),
+            Some(_) => {
+                if PLAYLIST_URL_REGEX.is_match(&query) {
+                    QueryType::PlaylistLink(query)
+                } else {
+                    QueryType::TrackLink(query)
+                }
+            }
+            None => return Err(anyhow!("Invalid link")),
+        },
+
+        Err(_) => QueryType::Keywords(query),
+    })
+}
+
+async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, TrackInfo)> {
+    let call = ctx
+        .get_bot_call()
+        .await
+        .map_err(|_| anyhow!("Bot is not in call"))?;
+
+    let mut source = YoutubeDl::new(ctx.data().http.clone(), url.clone());
+
+    let metadata = source
+        .aux_metadata()
+        .await
+        .map_err(|_| anyhow!("Unable to fetch track metadata"))?;
+
+    let mut handler = call.lock().await;
+    let track_handle = handler.enqueue(source.into()).await;
+    let mut typemap = track_handle.typemap().write().await;
+
+    let track_info = TrackInfo {
+        url,
+        title: metadata.title.clone().unwrap_or("Unknown".to_string()),
+        thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
+        duration: metadata.duration.clone(),
+    };
+
+    typemap.insert::<TrackInfo>(track_info.clone());
+
+    // Drop the borrow so we can return the handle
+    drop(typemap);
+
+    anyhow::Ok((track_handle, track_info))
 }

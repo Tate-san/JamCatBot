@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-// User data, which is stored and accessible in all command invocations
 pub struct Data {
     pub http: reqwest_old::Client,
     pub songbird: Arc<songbird::Songbird>,

@@ -1,4 +1,4 @@
-use crate::{downloaders::ytdl::Ytdl, music, voice};
+use crate::{music, voice};
 
 use super::prelude::*;
 
@@ -10,13 +10,13 @@ pub async fn play(
     query: String,
 ) -> Result<(), Error> {
     if let Err(error) = voice::get_call_or_join(&ctx).await {
-        ctx.send_message(Message::Error(error.to_string())).await?;
-        return Ok(());
+        //ctx.send_message(Message::Error(error.to_string())).await?;
+        return Err(error.into());
     };
 
-    if let Err(error) = music::play_url(&ctx, query).await {
-        ctx.send_message(Message::Error(error.to_string())).await?;
-        return Ok(());
+    if let Err(error) = music::play_track(&ctx, query).await {
+        //ctx.send_message(Message::Error(error.to_string())).await?;
+        return Err(error.into());
     }
 
     Ok(())

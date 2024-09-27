@@ -1,11 +1,12 @@
 mod api;
 mod commands;
-pub mod downloaders;
+mod error;
 mod handlers;
 pub mod messages;
-pub mod music;
+mod music;
 mod poise_extension;
 mod prelude;
+mod sources;
 mod types;
 mod utils;
 mod voice;
@@ -27,6 +28,13 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
+            on_error: |error| {
+                Box::pin(async move {
+                    if let Err(e) = handlers::serenity::on_error(error).await {
+                        tracing::error!("Error while handling error: {}", e);
+                    }
+                })
+            },
             commands: vec![
                 commands::general::help(),
                 commands::general::test(),
@@ -39,6 +47,7 @@ async fn main() {
                 commands::music::play(),
                 commands::music::stop(),
                 commands::music::skip(),
+                commands::music::clear_queue(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(".".into()),

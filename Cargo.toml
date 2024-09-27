@@ -45,3 +45,8 @@ symphonia = { version = "0.5.4", features = [
     "opt-simd",
 ] }
 once_cell = "1.19.0"
+rspotify = "0.13.3"
+lazy_static = "1.5.0"
+regex = "1.10.6"
+thiserror = "1.0.64"
+url = "2.5.2"

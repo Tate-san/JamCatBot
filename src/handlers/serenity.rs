@@ -1,3 +1,7 @@
+use anyhow::Context;
+use poise::FrameworkError;
+
+use crate::messages;
 use crate::prelude::*;
 use crate::types::*;
 
@@ -16,5 +20,27 @@ pub async fn event_handler(
         }
         _ => {}
     }
+    Ok(())
+}
+
+pub async fn on_error<U, E: std::fmt::Display + std::fmt::Debug>(
+    error: FrameworkError<'_, U, E>,
+) -> Result<(), serenity::Error> {
+    tracing::error!("{}", error);
+
+    match error {
+        FrameworkError::UnknownCommand { ctx, msg, .. } => {
+            msg.reply(ctx.http.clone(), "Invalid command").await?;
+        }
+        FrameworkError::Command { ctx, error, .. } => {
+            ctx.send(
+                poise::CreateReply::default()
+                    .embed(messages::Message::Error(format!("{error}")).into()),
+            )
+            .await?;
+        }
+        _ => return poise::builtins::on_error(error).await,
+    };
+
     Ok(())
 }
