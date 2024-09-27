@@ -104,16 +104,12 @@ impl<'a> ContextExtension<'a> for crate::types::Context<'a> {
     }
 
     async fn send_embed(&'a self, embed: CreateEmbed) -> anyhow::Result<ReplyHandle<'a>> {
-        let params = MessageParams::default()
-            .with_embed(Some(embed))
-            .with_reply(false);
+        let params = MessageParams::default().with_embed(embed).with_reply(false);
         self.send_message_params(params).await
     }
 
     async fn reply_embed(&'a self, embed: CreateEmbed) -> anyhow::Result<ReplyHandle<'a>> {
-        let params = MessageParams::default()
-            .with_embed(Some(embed))
-            .with_reply(true);
+        let params = MessageParams::default().with_embed(embed).with_reply(true);
         self.send_message_params(params).await
     }
 }

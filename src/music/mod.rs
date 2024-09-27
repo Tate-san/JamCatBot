@@ -2,6 +2,7 @@ pub mod types;
 
 use crate::messages;
 use crate::prelude::*;
+use crate::sources::spotify::SPOTIFY;
 use crate::sources::ytdl::Ytdl;
 use crate::types::*;
 use anyhow::anyhow;
@@ -78,7 +79,7 @@ pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<()> {
 async fn match_query(query: String) -> Result<QueryType> {
     anyhow::Ok(match Url::from_str(&query) {
         Ok(url) => match url.domain() {
-            Some("open.spotify.com") => todo!(),
+            Some("open.spotify.com") => SPOTIFY.lock().await.extract(url).await?,
             Some(_) => {
                 if PLAYLIST_URL_REGEX.is_match(&query) {
                     QueryType::PlaylistLink(query)

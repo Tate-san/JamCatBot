@@ -21,10 +21,11 @@ async fn main() {
 
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let intents = serenity::GatewayIntents::all();
-
     let manager = songbird::Songbird::serenity();
-
     let manager_clone = manager.clone();
+    if let Err(error) = sources::spotify::SPOTIFY.lock().await.auth().await {
+        tracing::error!("Unable to auth spotify: {error}")
+    }
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {

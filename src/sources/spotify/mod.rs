@@ -4,16 +4,17 @@ use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 use rspotify::{
-    model::{AlbumId, Id, PlaylistId, SimplifiedArtist, TrackId},
+    model::{SimplifiedArtist, TrackId},
     prelude::BaseClient,
     ClientCredsSpotify, Credentials,
 };
-use serenity::futures::{StreamExt, TryStreamExt};
-use std::env;
+use std::{env, sync::Arc};
+use tokio::sync::Mutex;
 
 use crate::music::types::QueryType;
 
 lazy_static! {
+    pub static ref SPOTIFY: Arc<Mutex<Spotify>> = Arc::new(Mutex::new(Spotify::new()));
     pub static ref SPOTIFY_QUERY_REGEX: Regex =
         Regex::new(r"spotify.com/(?P<media_type>.+)/(?P<media_id>.*?)(?:\?|$)").unwrap();
 }

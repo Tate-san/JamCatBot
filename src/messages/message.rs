@@ -52,8 +52,11 @@ impl MessageParams {
         Self { message, ..self }
     }
 
-    pub fn with_embed(self, embed: Option<CreateEmbed>) -> Self {
-        Self { embed, ..self }
+    pub fn with_embed(self, embed: CreateEmbed) -> Self {
+        Self {
+            embed: Some(embed),
+            ..self
+        }
     }
 }
 
@@ -62,6 +65,7 @@ pub enum Message {
     Success(String),
     Error(String),
     Embed(CreateEmbed),
+    Image(String),
     Other(String),
 }
 
@@ -71,7 +75,7 @@ impl Display for Message {
             Self::Success(message) => f.write_str(&format!("✅ **{message}**")),
             Self::Error(message) => f.write_str(&format!("❗ **{message}**")),
             Self::Other(message) => f.write_str(&message),
-            _ => f.write_str("Empty"),
+            _ => f.write_str(""),
         }
     }
 }
@@ -81,6 +85,7 @@ impl From<&Message> for Colour {
         match value {
             Message::Error(_) => Colour::RED,
             Message::Success(_) => Colour::DARK_GREEN,
+            Message::Image(_) => Colour::MEIBE_PINK,
             _ => Colour::BLUE,
         }
     }
@@ -94,7 +99,14 @@ impl From<Message> for Colour {
 
 impl From<Message> for MessageParams {
     fn from(value: Message) -> Self {
-        MessageParams::new(value.clone()).with_color(value.into())
+        match &value {
+            Message::Image(url) => MessageParams::new(value.clone()).with_embed(
+                CreateEmbed::new()
+                    .image(url)
+                    .color::<Colour>((&value).into()),
+            ),
+            _ => MessageParams::new(value.clone()).with_color(value.into()),
+        }
     }
 }
 

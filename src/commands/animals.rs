@@ -6,7 +6,7 @@ pub async fn cat(ctx: Context<'_>) -> Result<(), Error> {
     let api = api::CatsApi::new()?;
     let res = api.random_cat().await?;
 
-    ctx.send_message(Message::Other(res.url)).await?;
+    ctx.send_message(Message::Image(res.url)).await?;
 
     Ok(())
 }
@@ -16,7 +16,7 @@ pub async fn dog(ctx: Context<'_>) -> Result<(), Error> {
     let api = api::DogsApi::new()?;
     let res = api.random_cat().await?;
 
-    ctx.send_message(Message::Other(res.url)).await?;
+    ctx.send_message(Message::Image(res.url)).await?;
 
     Ok(())
 }
