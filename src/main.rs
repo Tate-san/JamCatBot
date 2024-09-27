@@ -1,6 +1,6 @@
 mod api;
 mod commands;
-mod error;
+pub mod error;
 mod handlers;
 pub mod messages;
 mod music;

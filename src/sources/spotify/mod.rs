@@ -1,6 +1,6 @@
 mod tests;
 
-use anyhow::Result;
+use crate::types::*;
 use lazy_static::lazy_static;
 use regex::Regex;
 use rspotify::{
@@ -28,12 +28,12 @@ impl Spotify {
         Self { client: None }
     }
 
-    pub async fn auth(&mut self) -> Result<()> {
+    pub async fn auth(&mut self) -> Result<(), Error> {
         let spotify_client_id = env::var("SPOTIFY_CLIENT_ID")
-            .map_err(|_| anyhow::anyhow!("Spotify client id is not set up"))?;
+            .map_err(|_| BotError::ApiKeyMissing("SPOTIFY_CLIENT_ID".to_string()))?;
 
         let spotify_client_secret = env::var("SPOTIFY_CLIENT_SECRET")
-            .map_err(|_| anyhow::anyhow!("Spotify client secret is not set up"))?;
+            .map_err(|_| BotError::ApiKeyMissing("SPOTIFY_CLIENT_SECRET".to_string()))?;
 
         let credentials = Credentials::new(&spotify_client_id, &spotify_client_secret);
         let client = ClientCredsSpotify::new(credentials);
@@ -41,48 +41,48 @@ impl Spotify {
 
         self.client = Some(client);
 
-        anyhow::Ok(())
+        Ok(())
     }
 
-    pub async fn get_track(&self, id: &str) -> Result<rspotify::model::FullTrack> {
+    pub async fn get_track(&self, id: &str) -> Result<rspotify::model::FullTrack, Error> {
         let client = match &self.client {
             Some(client) => client,
-            None => return Err(anyhow::anyhow!("You need to authorize first")),
+            None => return Err(BotError::AuthError),
         };
 
-        let track_id = TrackId::from_id(id)?;
+        let track_id = TrackId::from_id(id).map_err(|e| BotError::Generic(e.to_string()))?;
         let track = client.track(track_id, None).await?;
 
-        anyhow::Ok(track)
+        Ok(track)
     }
 
-    pub async fn get_track_keywords(&self, id: &str) -> Result<String> {
+    pub async fn get_track_keywords(&self, id: &str) -> Result<String, Error> {
         let track = self.get_track(id).await?;
         let artists = Self::join_artists(&track.artists);
 
-        anyhow::Ok(Self::build_keyword(&artists, &track.name))
+        Ok(Self::build_keyword(&artists, &track.name))
     }
 
-    pub async fn extract(&self, url: impl ToString) -> Result<QueryType> {
+    pub async fn extract(&self, url: impl ToString) -> Result<QueryType, Error> {
         let url = url.to_string();
 
         let captures = SPOTIFY_QUERY_REGEX
             .captures(&url)
-            .ok_or(anyhow::anyhow!("Invalid spotify query"))?;
+            .ok_or(BotError::Generic("Invalid spotify query".to_string()))?;
 
         let media_type = captures
             .name("media_type")
-            .ok_or(anyhow::anyhow!("Invalid spotify query"))?
+            .ok_or(BotError::Generic("Invalid spotify query".to_string()))?
             .as_str();
 
         let media_id = captures
             .name("media_id")
-            .ok_or(anyhow::anyhow!("Invalid spotify query"))?
+            .ok_or(BotError::Generic("Invalid spotify query".to_string()))?
             .as_str();
 
-        anyhow::Ok(match media_type {
+        Ok(match media_type {
             "track" => QueryType::Keywords(self.get_track_keywords(media_id).await?),
-            _ => return Err(anyhow::anyhow!("Invalid spotify query")),
+            _ => return Err(BotError::Generic("Invalid spotify query".to_string())),
         })
     }
 

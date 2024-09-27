@@ -37,12 +37,12 @@ pub struct RedgifsApi {
 }
 
 impl RedgifsApi {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Result<Self, ApiError> {
         let client = super::ClientBuilder::new_default()?;
         Ok(Self { client })
     }
 
-    async fn get_temporary_access(&mut self) -> Result<TemporaryAccessResponse> {
+    async fn get_temporary_access(&mut self) -> Result<TemporaryAccessResponse, ApiError> {
         let result = self
             .client
             .get(format!("{}/v2/auth/temporary", URL))
@@ -54,9 +54,10 @@ impl RedgifsApi {
         Ok(serde_json::from_str(&text)?)
     }
 
-    pub async fn login_temporary(&mut self) -> Result<()> {
+    pub async fn login_temporary(&mut self) -> Result<(), ApiError> {
         let access = self.get_temporary_access().await?;
-        let bearer = HeaderValue::from_str(format!("Bearer {}", access.token).as_str())?;
+        let bearer = HeaderValue::from_str(&format!("Bearer {}", access.token))
+            .expect("Should always be valid");
 
         self.client = super::ClientBuilder::new()
             .header("Authorization", bearer)
@@ -71,7 +72,7 @@ impl RedgifsApi {
         count: u32,
         order: SearchOrder,
         search_text: impl ToString,
-    ) -> Result<GifList> {
+    ) -> Result<GifList, ApiError> {
         let order_str = order.to_string();
         let search_text = search_text.to_string();
 
@@ -99,7 +100,7 @@ impl RedgifsApi {
             }
             _ => {
                 let error_message = serde_json::from_str::<types::Error>(&text)?;
-                Err(anyhow::anyhow!(error_message.error.message))
+                Err(ApiError::ResponseError(error_message.error.message))
             }
         }
     }

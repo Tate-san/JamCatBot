@@ -1,7 +1,7 @@
 mod tests;
 pub mod types;
 
-use anyhow::{Ok, Result};
+use crate::types::*;
 use std::process::Command;
 use types::{PlaylistQueryItem, QueryItem};
 
@@ -20,7 +20,7 @@ impl Ytdl {
         }
     }
 
-    pub async fn query_playlist(&self, url: &str) -> Result<Vec<PlaylistQueryItem>> {
+    pub async fn query_playlist(&self, url: &str) -> Result<Vec<PlaylistQueryItem>, Error> {
         let output = Command::new(&self.program)
             .args(vec!["-j", "--flat-playlist", "-no-abort-on-error", url])
             .output()?;
@@ -37,7 +37,7 @@ impl Ytdl {
         Ok(links)
     }
 
-    pub async fn query(&self, url: &str) -> Result<QueryItem> {
+    pub async fn query(&self, url: &str) -> Result<QueryItem, Error> {
         let output = Command::new(&self.program).args(vec!["-j", url]).output()?;
         let output = String::from_utf8(output.stdout)?;
 
@@ -54,7 +54,7 @@ impl Ytdl {
         &self,
         query: &str,
         n_results: Option<usize>,
-    ) -> Result<Vec<PlaylistQueryItem>> {
+    ) -> Result<Vec<PlaylistQueryItem>, Error> {
         let n_results = n_results.unwrap_or(1);
 
         let output = Command::new(&self.program)

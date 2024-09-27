@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use rand::Rng;
 
 use super::prelude::*;
@@ -36,7 +35,7 @@ pub async fn naughty(
         }
         Err(error) => {
             tracing::error!("Invalid tags: {:?}", tags);
-            return Err(anyhow::anyhow!(error.to_string()).into());
+            return Err(BotError::Generic(error.to_string()));
 
             //ctx.send_message(Message::Error(error.to_string())).await?;
         }

@@ -9,7 +9,7 @@ mod tests {
 
         let ytdl = Ytdl::new();
 
-        let items = ytdl.query_playlist(playlist_url.to_string()).await.unwrap();
+        let items = ytdl.query_playlist(playlist_url).await.unwrap();
     }
 
     #[tokio::test]

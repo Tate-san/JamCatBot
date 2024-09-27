@@ -1,3 +1,4 @@
+pub use crate::error::BotError;
 use std::sync::Arc;
 
 pub struct Data {
@@ -5,5 +6,5 @@ pub struct Data {
     pub songbird: Arc<songbird::Songbird>,
 }
 
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
+pub type Error = BotError;
 pub type Context<'a> = poise::Context<'a, Data, Error>;

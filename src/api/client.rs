@@ -20,7 +20,7 @@ impl ClientBuilder {
         Self::default()
     }
 
-    pub fn new_default() -> Result<reqwest::Client> {
+    pub fn new_default() -> Result<reqwest::Client, ApiError> {
         Self::new().build()
     }
 
@@ -37,7 +37,7 @@ impl ClientBuilder {
         self
     }
 
-    pub fn build(self) -> Result<reqwest::Client> {
+    pub fn build(self) -> Result<reqwest::Client, ApiError> {
         Ok(reqwest::ClientBuilder::new()
             .user_agent(self.user_agent)
             .default_headers(self.headers)

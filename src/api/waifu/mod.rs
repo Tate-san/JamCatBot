@@ -12,12 +12,16 @@ pub struct WaifuApi {
 }
 
 impl WaifuApi {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Result<Self, ApiError> {
         let client = super::ClientBuilder::new_default()?;
         Ok(Self { client })
     }
 
-    pub async fn search(&self, is_nsfw: bool, gif: Option<bool>) -> Result<WaifuImageInfo> {
+    pub async fn search(
+        &self,
+        is_nsfw: bool,
+        gif: Option<bool>,
+    ) -> Result<WaifuImageInfo, ApiError> {
         let mut params = String::new();
 
         params += &format!("is_nsfw={}", if is_nsfw { "true" } else { "false" });
@@ -36,7 +40,7 @@ impl WaifuApi {
         let list = serde_json::from_str::<WaifuImages>(&text)?;
 
         if list.images.is_empty() {
-            Err(anyhow::anyhow!("No images found"))
+            Err(ApiError::Generic("No images found".to_string()))
         } else {
             Ok(list.images[0].clone())
         }

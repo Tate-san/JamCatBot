@@ -17,12 +17,12 @@ pub struct CoomerApi {
 }
 
 impl CoomerApi {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Result<Self, ApiError> {
         let client = super::ClientBuilder::new_default()?;
         Ok(Self { client })
     }
 
-    pub async fn creators(&self) -> Result<Vec<CreatorInfo>> {
+    pub async fn creators(&self) -> Result<Vec<CreatorInfo>, ApiError> {
         let result = self
             .client
             .get(format!("{}/creators.txt", URL))
@@ -34,13 +34,15 @@ impl CoomerApi {
         Ok(serde_json::from_str(&text)?)
     }
 
-    pub async fn creators_cached(&self) -> Result<Vec<CreatorInfo>> {
+    pub async fn creators_cached(&self) -> Result<Vec<CreatorInfo>, ApiError> {
         let mut file = std::fs::OpenOptions::new()
             .read(true)
-            .open("./creators.txt")?;
+            .open("./creators.txt")
+            .expect("File creators.txt should exist");
 
         let mut buffer = String::new();
-        file.read_to_string(&mut buffer)?;
+        file.read_to_string(&mut buffer)
+            .expect("File creators.txt should be readable");
 
         Ok(serde_json::from_str(&buffer)?)
     }
@@ -61,7 +63,7 @@ impl CoomerApi {
         None
     }
 
-    pub async fn random_creator(&self) -> Result<CreatorInfo> {
+    pub async fn random_creator(&self) -> Result<CreatorInfo, ApiError> {
         let creators = self.creators().await?;
         let creators_len = creators.len();
 
@@ -70,7 +72,7 @@ impl CoomerApi {
         Ok(creators[random_creator_idx].clone())
     }
 
-    pub async fn creator_posts(&self, creator: &CreatorInfo) -> Result<Vec<PostInfo>> {
+    pub async fn creator_posts(&self, creator: &CreatorInfo) -> Result<Vec<PostInfo>, ApiError> {
         let service = creator.service.clone();
         let id = creator.id.clone();
 
@@ -85,7 +87,7 @@ impl CoomerApi {
 
         match status {
             reqwest::StatusCode::OK => Ok(serde_json::from_str(&text)?),
-            _ => Err(anyhow::anyhow!(text)),
+            _ => Err(ApiError::ResponseError(text)),
         }
     }
 
@@ -97,7 +99,7 @@ impl CoomerApi {
         format!("{URL_ICONS}/{}/{}", &creator.service, &creator.id)
     }
 
-    pub async fn get_file_url(&self, post_path: impl ToString) -> Result<String> {
+    pub async fn get_file_url(&self, post_path: impl ToString) -> Result<String, ApiError> {
         let post_path = post_path.to_string();
         let file_url = format!("{URL_SITE}{post_path}");
 
@@ -105,10 +107,10 @@ impl CoomerApi {
 
         match result.status() {
             reqwest::StatusCode::OK => Ok(result.url().to_string()),
-            _ => Err(anyhow::anyhow!(
+            _ => Err(ApiError::Generic(format!(
                 "Unable to get the image, got reponse: {}",
                 result.status().as_u16()
-            )),
+            ))),
         }
     }
 }

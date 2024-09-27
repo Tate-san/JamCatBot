@@ -1,3 +1,4 @@
+use crate::types::*;
 use crate::{messages::MessageParams, Message};
 use poise::{CreateReply, ReplyHandle};
 use serenity::all::{CreateEmbed, VoiceState};
@@ -6,48 +7,44 @@ use std::{future::Future, sync::Arc};
 use tokio::sync::Mutex;
 
 pub trait ContextExtension<'a> {
-    fn get_bot_call(&'a self) -> impl Future<Output = anyhow::Result<Arc<Mutex<Call>>>>;
+    fn get_bot_call(&'a self) -> impl Future<Output = Result<Arc<Mutex<Call>>, Error>>;
 
     fn get_author_voice_state(&'a self) -> impl Future<Output = Option<VoiceState>>;
 
     fn send_message_params(
         &'a self,
         params: MessageParams,
-    ) -> impl Future<Output = anyhow::Result<ReplyHandle<'a>>>;
+    ) -> impl Future<Output = Result<ReplyHandle<'a>, Error>>;
 
     fn send_message(
         &'a self,
         message: Message,
-    ) -> impl Future<Output = anyhow::Result<ReplyHandle<'a>>>;
+    ) -> impl Future<Output = Result<ReplyHandle<'a>, Error>>;
 
     fn reply_message(
         &'a self,
         message: Message,
-    ) -> impl Future<Output = anyhow::Result<ReplyHandle<'a>>>;
+    ) -> impl Future<Output = Result<ReplyHandle<'a>, Error>>;
 
     fn send_embed(
         &'a self,
         embed: CreateEmbed,
-    ) -> impl Future<Output = anyhow::Result<ReplyHandle<'a>>>;
+    ) -> impl Future<Output = Result<ReplyHandle<'a>, Error>>;
 
     fn reply_embed(
         &'a self,
         embed: CreateEmbed,
-    ) -> impl Future<Output = anyhow::Result<ReplyHandle<'a>>>;
+    ) -> impl Future<Output = Result<ReplyHandle<'a>, Error>>;
 }
 
 impl<'a> ContextExtension<'a> for crate::types::Context<'a> {
     /// Gets bot's call in current group.
-    async fn get_bot_call(&'a self) -> anyhow::Result<Arc<Mutex<Call>>> {
-        let guild_id = self
-            .guild_id()
-            .ok_or(anyhow::anyhow!("You have to be in a guild"))?;
+    async fn get_bot_call(&'a self) -> Result<Arc<Mutex<Call>>, Error> {
+        let guild_id = self.guild_id().ok_or(BotError::GuildOnly)?;
 
         let manager = self.data().songbird.clone();
 
-        manager
-            .get(guild_id)
-            .ok_or(anyhow::anyhow!("Bot is not in a call"))
+        manager.get(guild_id).ok_or(BotError::BotNotInVoice)
     }
 
     async fn get_author_voice_state(&'a self) -> Option<VoiceState> {
@@ -66,7 +63,7 @@ impl<'a> ContextExtension<'a> for crate::types::Context<'a> {
     async fn send_message_params(
         &'a self,
         params: MessageParams,
-    ) -> anyhow::Result<ReplyHandle<'a>> {
+    ) -> Result<ReplyHandle<'a>, Error> {
         let mut reply = CreateReply::default();
         let text_content = params.message.to_string();
 
@@ -93,22 +90,22 @@ impl<'a> ContextExtension<'a> for crate::types::Context<'a> {
         }
     }
 
-    async fn send_message(&'a self, message: Message) -> anyhow::Result<ReplyHandle<'a>> {
+    async fn send_message(&'a self, message: Message) -> Result<ReplyHandle<'a>, Error> {
         self.send_message_params(message.into()).await
     }
 
-    async fn reply_message(&'a self, message: Message) -> anyhow::Result<ReplyHandle<'a>> {
+    async fn reply_message(&'a self, message: Message) -> Result<ReplyHandle<'a>, Error> {
         let params: MessageParams = message.into();
         let params = params.with_reply(true);
         self.send_message_params(params).await
     }
 
-    async fn send_embed(&'a self, embed: CreateEmbed) -> anyhow::Result<ReplyHandle<'a>> {
+    async fn send_embed(&'a self, embed: CreateEmbed) -> Result<ReplyHandle<'a>, Error> {
         let params = MessageParams::default().with_embed(embed).with_reply(false);
         self.send_message_params(params).await
     }
 
-    async fn reply_embed(&'a self, embed: CreateEmbed) -> anyhow::Result<ReplyHandle<'a>> {
+    async fn reply_embed(&'a self, embed: CreateEmbed) -> Result<ReplyHandle<'a>, Error> {
         let params = MessageParams::default().with_embed(embed).with_reply(true);
         self.send_message_params(params).await
     }

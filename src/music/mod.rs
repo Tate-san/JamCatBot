@@ -1,3 +1,4 @@
+pub mod error;
 pub mod types;
 
 use crate::messages;
@@ -5,8 +6,7 @@ use crate::prelude::*;
 use crate::sources::spotify::SPOTIFY;
 use crate::sources::ytdl::Ytdl;
 use crate::types::*;
-use anyhow::anyhow;
-use anyhow::Result;
+use error::MusicError;
 use lazy_static::lazy_static;
 use regex::Regex;
 use songbird::input::Compose;
@@ -23,7 +23,7 @@ lazy_static! {
 }
 
 /// Main function for playing tracks.
-pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<()> {
+pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<(), Error> {
     let call = ctx.get_bot_call().await?;
     let query_type = match_query(query).await?;
 
@@ -55,9 +55,7 @@ pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<()> {
             let list = ytdl.search(&query, None).await?;
 
             if list.is_empty() {
-                ctx.send_message(Message::Error("No such bullshit found".to_string()))
-                    .await?;
-                return anyhow::Ok(());
+                return Err(MusicError::SearchNotFound.into());
             }
 
             let (_, track_info) = enqueue_back(ctx, list[0].url.clone()).await?;
@@ -70,14 +68,14 @@ pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<()> {
         _ => todo!("Not done yet"),
     };
 
-    anyhow::Ok(())
+    Ok(())
 }
 
 /// Matches the query string to corresponding QueryType.
 ///
 /// Also handles extraction from ytdl unsupported sites like spotify.
-async fn match_query(query: String) -> Result<QueryType> {
-    anyhow::Ok(match Url::from_str(&query) {
+async fn match_query(query: String) -> Result<QueryType, Error> {
+    Ok(match Url::from_str(&query) {
         Ok(url) => match url.domain() {
             Some("open.spotify.com") => SPOTIFY.lock().await.extract(url).await?,
             Some(_) => {
@@ -87,25 +85,25 @@ async fn match_query(query: String) -> Result<QueryType> {
                     QueryType::TrackLink(query)
                 }
             }
-            None => return Err(anyhow!("Invalid link")),
+            None => return Err(MusicError::InvalidLink.into()),
         },
 
         Err(_) => QueryType::Keywords(query),
     })
 }
 
-async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, TrackInfo)> {
+async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, TrackInfo), Error> {
     let call = ctx
         .get_bot_call()
         .await
-        .map_err(|_| anyhow!("Bot is not in call"))?;
+        .map_err(|_| BotError::BotNotInVoice)?;
 
     let mut source = YoutubeDl::new(ctx.data().http.clone(), url.clone());
 
     let metadata = source
         .aux_metadata()
         .await
-        .map_err(|_| anyhow!("Unable to fetch track metadata"))?;
+        .map_err(|_| MusicError::TrackFetch)?;
 
     let mut handler = call.lock().await;
     let track_handle = handler.enqueue(source.into()).await;
@@ -123,5 +121,5 @@ async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, Tr
     // Drop the borrow so we can return the handle
     drop(typemap);
 
-    anyhow::Ok((track_handle, track_info))
+    Ok((track_handle, track_info))
 }

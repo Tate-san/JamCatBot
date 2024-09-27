@@ -11,12 +11,12 @@ pub struct DogsApi {
 }
 
 impl DogsApi {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Result<Self, ApiError> {
         let client = super::ClientBuilder::new_default()?;
         Ok(Self { client })
     }
 
-    pub async fn random_cat(&self) -> Result<DogInfo> {
+    pub async fn random_cat(&self) -> Result<DogInfo, ApiError> {
         let result = self
             .client
             .get(format!("{}/v1/images/search", URL))

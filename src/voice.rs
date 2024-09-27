@@ -15,7 +15,7 @@ pub async fn get_call_or_join(ctx: &Context<'_>) -> Result<Arc<Mutex<Call>>, Err
     let user_voice_state = if let Some(voice_state) = ctx.get_author_voice_state().await {
         voice_state
     } else {
-        return Err(Box::new(BotError::NotInVoice));
+        return Err(BotError::NotInVoice);
     };
 
     let manager = ctx.data().songbird.clone();
