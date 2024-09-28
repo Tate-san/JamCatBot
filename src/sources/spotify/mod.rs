@@ -1,13 +1,17 @@
 mod tests;
 
-use crate::types::*;
+use crate::{types::*, utils::MUSIC_ONLY_SUFFIX};
 use lazy_static::lazy_static;
 use regex::Regex;
 use rspotify::{
-    model::{SimplifiedArtist, TrackId},
+    model::{
+        AlbumId, FullTrack, Id, PlayableItem, PlaylistId, SimplifiedArtist, SimplifiedTrack,
+        TrackId,
+    },
     prelude::BaseClient,
     ClientCredsSpotify, Credentials,
 };
+use serenity::futures::{StreamExt, TryStreamExt};
 use std::{env, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -44,7 +48,7 @@ impl Spotify {
         Ok(())
     }
 
-    pub async fn get_track(&self, id: &str) -> Result<rspotify::model::FullTrack, Error> {
+    pub async fn get_track(&self, id: &str) -> Result<FullTrack, Error> {
         let client = match &self.client {
             Some(client) => client,
             None => return Err(BotError::AuthError),
@@ -60,7 +64,68 @@ impl Spotify {
         let track = self.get_track(id).await?;
         let artists = Self::join_artists(&track.artists);
 
-        Ok(Self::build_keyword(&artists, &track.name))
+        Ok(Self::build_keyword_topic(&track))
+    }
+
+    pub async fn get_playlist_tracks(&self, id: &str) -> Result<Vec<FullTrack>, Error> {
+        let client = match &self.client {
+            Some(client) => client,
+            None => return Err(BotError::AuthError),
+        };
+
+        let mut tracks = vec![];
+
+        let playlist_id = PlaylistId::from_id(id).map_err(|e| BotError::Generic(e.to_string()))?;
+        let mut playlist = client.playlist_items(playlist_id, None, None);
+
+        while let Ok(Some(item)) = playlist.try_next().await {
+            if let Some(PlayableItem::Track(track)) = item.track {
+                tracks.push(track.clone());
+            }
+        }
+
+        Ok(tracks)
+    }
+
+    pub async fn get_playlist_tracks_keywords(&self, id: &str) -> Result<Vec<String>, Error> {
+        let tracks = self.get_playlist_tracks(id).await?;
+
+        Ok(tracks
+            .iter()
+            .map(|x| Self::build_keyword_topic(&x))
+            .collect())
+    }
+
+    pub async fn get_album_tracks(&self, id: &str) -> Result<Vec<FullTrack>, Error> {
+        let client = match &self.client {
+            Some(client) => client,
+            None => return Err(BotError::AuthError),
+        };
+
+        let mut tracks = vec![];
+
+        let album_id = AlbumId::from_id(id).map_err(|e| BotError::Generic(e.to_string()))?;
+        let mut album = client.album_track(album_id, None);
+        // TODO
+        /*
+        while let Ok(Some(item)) = album.try_next().await {
+            SimplifiedTrack
+            if let Some(PlayableItem::Track(track)) = item.track {
+                tracks.push(track.clone());
+            }
+        }
+        */
+
+        Ok(tracks)
+    }
+
+    pub async fn get_album_tracks_keywords(&self, id: &str) -> Result<Vec<String>, Error> {
+        let tracks = self.get_album_tracks(id).await?;
+
+        Ok(tracks
+            .iter()
+            .map(|x| Self::build_keyword_topic(&x))
+            .collect())
     }
 
     pub async fn extract(&self, url: impl ToString) -> Result<QueryType, Error> {
@@ -82,12 +147,23 @@ impl Spotify {
 
         Ok(match media_type {
             "track" => QueryType::Keywords(self.get_track_keywords(media_id).await?),
-            _ => return Err(BotError::Generic("Invalid spotify query".to_string())),
+            "playlist" => {
+                QueryType::KeywordsList(self.get_playlist_tracks_keywords(media_id).await?)
+            }
+            _ => return Err(BotError::Generic("Not supported yet".to_string())),
         })
     }
 
-    fn build_keyword(artists: &str, title: &str) -> String {
+    fn build_keyword(track: &FullTrack) -> String {
+        let artists = Self::join_artists(&track.artists);
+        let title = track.name.to_string();
+
         format!("{artists} - {title}")
+    }
+
+    fn build_keyword_topic(track: &FullTrack) -> String {
+        let keyword = Self::build_keyword(track);
+        format!("{keyword} {MUSIC_ONLY_SUFFIX}")
     }
 
     fn join_artists(artists: &[SimplifiedArtist]) -> String {

@@ -1,7 +1,7 @@
 mod tests;
 pub mod types;
 
-use crate::types::*;
+use crate::{music::error::MusicError, types::*};
 use std::process::Command;
 use types::{PlaylistQueryItem, QueryItem};
 
@@ -54,7 +54,7 @@ impl Ytdl {
         &self,
         query: &str,
         n_results: Option<usize>,
-    ) -> Result<Vec<PlaylistQueryItem>, Error> {
+    ) -> Result<Vec<QueryItem>, Error> {
         let n_results = n_results.unwrap_or(1);
 
         let output = Command::new(&self.program)
@@ -72,10 +72,20 @@ impl Ytdl {
         let mut links = vec![];
 
         for line in output.lines() {
-            let query: PlaylistQueryItem = serde_json::from_str(line)?;
+            let query: QueryItem = serde_json::from_str(line)?;
             links.push(query);
         }
 
         Ok(links)
+    }
+
+    pub async fn search_song(&self, query: &str) -> Result<QueryItem, Error> {
+        let songs = self.search(query, None).await?;
+
+        if songs.is_empty() {
+            return Err(MusicError::SearchNotFound.into());
+        }
+
+        Ok(songs[0].clone())
     }
 }

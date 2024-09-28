@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use guild::GuildCache;
 use songbird::Call;
 use songbird::TrackEvent;
 use tokio::sync::Mutex;
@@ -11,6 +12,7 @@ use crate::types::*;
 
 pub async fn get_call_or_join(ctx: &Context<'_>) -> Result<Arc<Mutex<Call>>, Error> {
     let guild = ctx.guild().unwrap().clone();
+    let guild_id = guild.id.clone();
 
     let user_voice_state = if let Some(voice_state) = ctx.get_author_voice_state().await {
         voice_state
@@ -20,7 +22,7 @@ pub async fn get_call_or_join(ctx: &Context<'_>) -> Result<Arc<Mutex<Call>>, Err
 
     let manager = ctx.data().songbird.clone();
 
-    Ok(match ctx.get_bot_call().await {
+    let handler = match ctx.get_bot_call().await {
         Ok(handler) => handler,
         Err(_) => {
             let handler = manager
@@ -31,7 +33,9 @@ pub async fn get_call_or_join(ctx: &Context<'_>) -> Result<Arc<Mutex<Call>>, Err
 
             handler
         }
-    })
+    };
+
+    Ok(handler)
 }
 
 pub async fn register_call_handlers(ctx: &Context<'_>, call: Arc<Mutex<Call>>) {

@@ -12,7 +12,9 @@ mod utils;
 mod voice;
 
 use prelude::*;
-use std::env;
+use std::{env, sync::Arc};
+use tokio::sync::Mutex;
+use types::guild::GuildCacheMap;
 
 #[tokio::main]
 async fn main() {
@@ -49,6 +51,10 @@ async fn main() {
                 commands::music::stop(),
                 commands::music::skip(),
                 commands::music::clear_queue(),
+                commands::music::volume(),
+                commands::music::queue(),
+                commands::music::queue_move(),
+                commands::music::remove(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(".".into()),
@@ -71,6 +77,7 @@ async fn main() {
                         .build()
                         .expect("Failed to build reqwest client"),
                     songbird: manager_clone,
+                    guild_cache: Arc::new(Mutex::new(GuildCacheMap::default())),
                 })
             })
         })

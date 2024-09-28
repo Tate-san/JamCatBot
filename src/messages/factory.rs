@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::{api, music::types::TrackInfo};
+use crate::{api, music::types::TrackInfo, utils::duration_string};
 
 pub fn create_coomer_image_embed(
     creator: &api::coomer::types::CreatorInfo,
@@ -24,20 +24,13 @@ pub fn create_coomer_image_embed(
 pub fn create_now_playing_embed(info: TrackInfo) -> serenity::CreateEmbed {
     let mut embed = serenity::CreateEmbed::new()
         .author(serenity::CreateEmbedAuthor::new("🎧 Playing right now"))
-        .title(info.title)
+        .color(serenity::Colour::MEIBE_PINK)
+        .title(info.full_name())
         .url(info.url)
         .thumbnail(info.thumbnail);
 
     if let Some(duration) = info.duration {
-        let seconds = duration.as_secs() % 60;
-        let minutes = (duration.as_secs() / 60) % 60;
-        let hours = (duration.as_secs() / 60) / 60;
-
-        let time_str = if hours > 0 {
-            format!("{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
-        } else {
-            format!("{minutes:0>2}:{seconds:0>2}")
-        };
+        let time_str = duration_string(duration);
 
         embed = embed.field(
             "",
@@ -58,20 +51,13 @@ pub fn create_now_playing_embed(info: TrackInfo) -> serenity::CreateEmbed {
 pub fn create_queued_track_embed(info: TrackInfo) -> serenity::CreateEmbed {
     let mut embed = serenity::CreateEmbed::new()
         .author(serenity::CreateEmbedAuthor::new("🚀 Added to queue"))
-        .title(info.title)
+        .color(serenity::Colour::MEIBE_PINK)
+        .title(info.full_name())
         .url(info.url)
         .thumbnail(info.thumbnail);
 
     if let Some(duration) = info.duration {
-        let seconds = duration.as_secs() % 60;
-        let minutes = (duration.as_secs() / 60) % 60;
-        let hours = (duration.as_secs() / 60) / 60;
-
-        let time_str = if hours > 0 {
-            format!("{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
-        } else {
-            format!("{minutes:0>2}:{seconds:0>2}")
-        };
+        let time_str = duration_string(duration);
 
         embed = embed.field("", format!("**Duration: {time_str}**"), false);
 
@@ -95,4 +81,42 @@ pub fn create_queued_tracks_embed(count: usize) -> serenity::CreateEmbed {
             format!("**{}**", crate::utils::ascii::random_brainrot()),
             false,
         )
+        .color(serenity::Colour::MEIBE_PINK)
+}
+
+pub fn create_queue_list_embed(
+    tracks: Vec<TrackInfo>,
+    page: usize,
+    items_per_page: usize,
+) -> serenity::CreateEmbed {
+    let tracks_len = tracks.len();
+    let offset = items_per_page * page;
+
+    let mut embed = serenity::CreateEmbed::new()
+        .title("🎧 Tracks Queue")
+        .color(serenity::Colour::MEIBE_PINK);
+
+    if let Some(current_track) = tracks.first() {
+        embed = embed.field(
+            "",
+            format!(
+                "🔥 **[{}]({})**",
+                current_track.full_name(),
+                current_track.url
+            ),
+            false,
+        );
+    }
+
+    for i in (offset + 1)..(offset + items_per_page + 1) {
+        if i < tracks_len {
+            embed = embed.field(
+                "",
+                format!("{}) [{}]({})", i, tracks[i].full_name(), tracks[i].url),
+                false,
+            );
+        }
+    }
+
+    embed
 }

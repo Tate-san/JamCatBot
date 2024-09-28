@@ -1,4 +1,5 @@
 use anyhow::Context;
+use guild::GuildCache;
 use poise::FrameworkError;
 
 use crate::messages;
@@ -14,6 +15,18 @@ pub async fn event_handler(
     data: &Data,
 ) -> Result<(), Error> {
     match event {
+        serenity::FullEvent::CacheReady { guilds } => {
+            for guild_id in guilds {
+                let has_no_cache = data.guild_cache.lock().await.get(&guild_id).is_none();
+
+                if has_no_cache {
+                    data.guild_cache
+                        .lock()
+                        .await
+                        .insert(guild_id.clone(), GuildCache::default());
+                }
+            }
+        }
         serenity::FullEvent::Ready { data_about_bot, .. } => {
             tracing::info!("Logged in as {}", data_about_bot.user.name);
             tracing::info!("Here's your invite link: {INVITE_URL}");

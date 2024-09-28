@@ -52,20 +52,32 @@ pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<(), Error> {
         }
         QueryType::Keywords(query) => {
             let ytdl = Ytdl::new();
-            let list = ytdl.search(&query, None).await?;
+            let track = ytdl.search_song(&query).await?;
 
-            if list.is_empty() {
-                return Err(MusicError::SearchNotFound.into());
-            }
-
-            let (_, track_info) = enqueue_back(ctx, list[0].url.clone()).await?;
+            let (_, track_info) = enqueue_back(ctx, track.url.clone()).await?;
 
             if queue_len >= 1 {
                 ctx.send_embed(messages::factory::create_queued_track_embed(track_info))
                     .await?;
             }
         }
-        _ => todo!("Not done yet"),
+        QueryType::KeywordsList(list) => {
+            let ytdl = Ytdl::new();
+            let list_len = list.len();
+
+            for keyword in list {
+                let track = ytdl.search_song(&keyword).await?;
+                let (_, _) = enqueue_back(ctx, track.url.clone()).await?;
+            }
+
+            ctx.send_embed(messages::factory::create_queued_tracks_embed(list_len))
+                .await?;
+        }
+        _ => {
+            return Err(BotError::Generic(
+                "This shit is not implemented yet or won't be supported at all".to_string(),
+            ))
+        }
     };
 
     Ok(())
@@ -93,6 +105,8 @@ async fn match_query(query: String) -> Result<QueryType, Error> {
 }
 
 async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, TrackInfo), Error> {
+    let guild_id = ctx.guild_id().ok_or(BotError::GuildOnly)?;
+
     let call = ctx
         .get_bot_call()
         .await
@@ -112,6 +126,7 @@ async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, Tr
     let track_info = TrackInfo {
         url,
         title: metadata.title.clone().unwrap_or("Unknown".to_string()),
+        artist: metadata.artist.unwrap_or("Unknown".to_string()),
         thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
         duration: metadata.duration.clone(),
     };
@@ -121,5 +136,31 @@ async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, Tr
     // Drop the borrow so we can return the handle
     drop(typemap);
 
+    if let Some(cache) = ctx.data().guild_cache.lock().await.get_mut(&guild_id) {
+        let _ = track_handle.set_volume(cache.volume / 100.0);
+    }
+
     Ok((track_handle, track_info))
+}
+
+pub async fn set_volume(ctx: &Context<'_>, volume: f32) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().ok_or(BotError::GuildOnly)?;
+    let call = ctx.get_bot_call().await?;
+
+    if let Some(cache) = ctx.data().guild_cache.lock().await.get_mut(&guild_id) {
+        cache.volume = volume;
+    } else {
+        // This edgecase shouldn't happen at all since the cache gets created on guild register event
+        tracing::error!("Guild {} is not cached", guild_id);
+    }
+
+    let handle = call.lock().await;
+
+    handle.queue().modify_queue(|queue| {
+        for track in queue {
+            let _ = track.set_volume(volume / 100.0);
+        }
+    });
+
+    Ok(())
 }
