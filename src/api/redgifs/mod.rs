@@ -104,4 +104,26 @@ impl RedgifsApi {
             }
         }
     }
+
+    pub async fn feed(&mut self) -> Result<GifList, ApiError> {
+        let res = self
+            .client
+            .get(format!("{URL}/v2/feeds/home"))
+            .send()
+            .await?;
+
+        let status = res.status();
+        let text = res.text().await?;
+
+        match status {
+            reqwest::StatusCode::OK => {
+                let res = serde_json::from_str::<types::GifList>(&text)?;
+                Ok(res)
+            }
+            _ => {
+                let error_message = serde_json::from_str::<types::Error>(&text)?;
+                Err(ApiError::ResponseError(error_message.error.message))
+            }
+        }
+    }
 }

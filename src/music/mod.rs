@@ -22,7 +22,7 @@ lazy_static! {
     pub static ref PLAYLIST_URL_REGEX: Regex = Regex::new(r"list=").unwrap();
 }
 
-/// Main function for playing tracks.
+/// Main function for playing/enqueuing tracks.
 pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<(), Error> {
     let call = ctx.get_bot_call().await?;
     let query_type = match_query(query).await?;
@@ -43,11 +43,37 @@ pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<(), Error> {
             let playlist = ytdl.query_playlist(&url).await?;
             let playlist_len = playlist.len();
 
-            for item in playlist {
-                let _ = enqueue_back(ctx, item.url).await?;
+            let message = ctx
+                .send_message(Message::Other("Fetching songs".to_string()))
+                .await?;
+
+            for (index, item) in playlist.iter().enumerate() {
+                message
+                    .edit(
+                        *ctx,
+                        poise::CreateReply::default().embed(
+                            Message::Other(format!("Adding song {}/{playlist_len}", index + 1))
+                                .into(),
+                        ),
+                    )
+                    .await?;
+
+                if let Err(error) = enqueue_back(ctx, item.url.clone()).await {
+                    ctx.send_message(Message::Error(error.to_string())).await?;
+
+                    match error {
+                        BotError::MusicError(MusicError::Unavailable(_)) => continue,
+                        _ => return Err(error),
+                    };
+                }
             }
 
-            ctx.send_embed(messages::factory::create_queued_tracks_embed(playlist_len))
+            message
+                .edit(
+                    *ctx,
+                    poise::CreateReply::default()
+                        .embed(messages::factory::create_queued_tracks_embed(playlist_len)),
+                )
                 .await?;
         }
         QueryType::Keywords(query) => {
@@ -65,12 +91,38 @@ pub async fn play_track(ctx: &Context<'_>, query: String) -> Result<(), Error> {
             let ytdl = Ytdl::new();
             let list_len = list.len();
 
-            for keyword in list {
-                let track = ytdl.search_song(&keyword).await?;
-                let (_, _) = enqueue_back(ctx, track.url.clone()).await?;
+            let message = ctx
+                .send_message(Message::Other("Fetching songs".to_string()))
+                .await?;
+
+            for (index, keyword) in list.iter().enumerate() {
+                message
+                    .edit(
+                        *ctx,
+                        poise::CreateReply::default().embed(
+                            Message::Other(format!("Adding song {}/{list_len}", index + 1)).into(),
+                        ),
+                    )
+                    .await?;
+
+                let track = ytdl.search_song(keyword).await?;
+
+                if let Err(error) = enqueue_back(ctx, track.url).await {
+                    ctx.send_message(Message::Error(error.to_string())).await?;
+
+                    match error {
+                        BotError::MusicError(MusicError::Unavailable(_)) => continue,
+                        _ => return Err(error),
+                    };
+                }
             }
 
-            ctx.send_embed(messages::factory::create_queued_tracks_embed(list_len))
+            message
+                .edit(
+                    *ctx,
+                    poise::CreateReply::default()
+                        .embed(messages::factory::create_queued_tracks_embed(list_len)),
+                )
                 .await?;
         }
         _ => {
@@ -114,10 +166,19 @@ async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, Tr
 
     let mut source = YoutubeDl::new(ctx.data().http.clone(), url.clone());
 
-    let metadata = source
-        .aux_metadata()
-        .await
-        .map_err(|_| MusicError::TrackFetch)?;
+    let metadata = source.aux_metadata().await;
+
+    if let Err(error) = metadata {
+        let error_str = error.to_string();
+
+        if error_str.contains("unavailable") {
+            return Err(MusicError::Unavailable(url.clone()).into());
+        }
+
+        return Err(MusicError::TrackFetch.into());
+    }
+
+    let metadata = metadata.unwrap();
 
     let mut handler = call.lock().await;
     let track_handle = handler.enqueue(source.into()).await;
@@ -128,7 +189,7 @@ async fn enqueue_back(ctx: &Context<'_>, url: String) -> Result<(TrackHandle, Tr
         title: metadata.title.clone().unwrap_or("Unknown".to_string()),
         artist: metadata.artist.unwrap_or("Unknown".to_string()),
         thumbnail: metadata.thumbnail.clone().unwrap_or_default(),
-        duration: metadata.duration.clone(),
+        duration: metadata.duration,
     };
 
     typemap.insert::<TrackInfo>(track_info.clone());

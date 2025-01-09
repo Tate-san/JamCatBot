@@ -1,4 +1,3 @@
-use anyhow::Context;
 use guild::GuildCache;
 use poise::FrameworkError;
 
@@ -9,7 +8,7 @@ use crate::types::*;
 static INVITE_URL: &str = "https://discord.com/oauth2/authorize?client_id=1185534216558084108";
 
 pub async fn event_handler(
-    ctx: &serenity::Context,
+    _ctx: &serenity::Context,
     event: &serenity::FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
@@ -17,13 +16,13 @@ pub async fn event_handler(
     match event {
         serenity::FullEvent::CacheReady { guilds } => {
             for guild_id in guilds {
-                let has_no_cache = data.guild_cache.lock().await.get(&guild_id).is_none();
+                let has_no_cache = data.guild_cache.lock().await.get(guild_id).is_none();
 
                 if has_no_cache {
                     data.guild_cache
                         .lock()
                         .await
-                        .insert(guild_id.clone(), GuildCache::default());
+                        .insert(*guild_id, GuildCache::default());
                 }
             }
         }

@@ -1,3 +1,4 @@
+use crate::music::types::TrackInfo;
 use crate::types::*;
 use crate::{messages::MessageParams, Message};
 use poise::{CreateReply, ReplyHandle};
@@ -10,6 +11,8 @@ pub trait ContextExtension<'a> {
     fn get_bot_call(&'a self) -> impl Future<Output = Result<Arc<Mutex<Call>>, Error>>;
 
     fn get_author_voice_state(&'a self) -> impl Future<Output = Option<VoiceState>>;
+
+    fn get_track_info(&'a self, index: usize) -> impl Future<Output = Option<TrackInfo>>;
 
     fn send_message_params(
         &'a self,
@@ -53,11 +56,23 @@ impl<'a> ContextExtension<'a> for crate::types::Context<'a> {
             .expect("Should be called only in guild")
             .clone();
 
-        if let Some(state) = guild.voice_states.get(&self.author().id) {
-            Some(state.clone())
-        } else {
-            None
+        guild.voice_states.get(&self.author().id).cloned()
+    }
+
+    async fn get_track_info(&'a self, index: usize) -> Option<TrackInfo> {
+        if let Ok(call) = self.get_bot_call().await {
+            let handler = call.lock().await;
+
+            if let Some(track) = handler.queue().current_queue().get(index) {
+                return track
+                    .typemap()
+                    .read()
+                    .await
+                    .get::<TrackInfo>()
+                    .map(|x| x.to_owned());
+            }
         }
+        None
     }
 
     async fn send_message_params(

@@ -4,25 +4,10 @@ use super::prelude::*;
 use crate::api;
 
 #[poise::command(prefix_command, slash_command, category = "NSFW")]
-pub async fn naughty(
-    ctx: Context<'_>,
-    #[description = "Tags to search for"]
-    #[rest]
-    tags: Option<String>,
-) -> Result<(), Error> {
+pub async fn naughty(ctx: Context<'_>) -> Result<(), Error> {
     let mut redgifs = api::RedgifsApi::new()?;
     redgifs.login_temporary().await?;
-
-    let random_page: u32 = rand::thread_rng().gen_range(1..100);
-
-    let res = redgifs
-        .search(
-            random_page,
-            10,
-            api::redgifs::SearchOrder::Best,
-            tags.clone().unwrap_or_default(),
-        )
-        .await;
+    let res = redgifs.feed().await;
 
     match res {
         Ok(list) => {
@@ -34,10 +19,7 @@ pub async fn naughty(
             ctx.say(link).await?;
         }
         Err(error) => {
-            tracing::error!("Invalid tags: {:?}", tags);
             return Err(BotError::Generic(error.to_string()));
-
-            //ctx.send_message(Message::Error(error.to_string())).await?;
         }
     }
 
@@ -109,6 +91,10 @@ pub async fn creator(
     ctx: Context<'_>,
     #[description = "Creator name"] name: String,
 ) -> Result<(), Error> {
+    let msg_handle = ctx
+        .send_message(Message::Other("Getting the sauce".to_string()))
+        .await?;
+
     let api = api::CoomerApi::new()?;
     let creators = api.creators_cached().await?;
     let creator = match api.find_creator_by_name(&name, &creators).await {
@@ -139,12 +125,20 @@ pub async fn creator(
         creator_icon_url,
     );
 
-    ctx.send_embed(embed).await?;
+    //ctx.send_embed(embed).await?;
+    msg_handle
+        .edit(ctx, poise::CreateReply::default().embed(embed))
+        .await?;
+
     Ok(())
 }
 
 #[poise::command(prefix_command, slash_command, category = "NSFW")]
 pub async fn random(ctx: Context<'_>) -> Result<(), Error> {
+    let msg_handle = ctx
+        .send_message(Message::Other("Getting the sauce".to_string()))
+        .await?;
+
     let api = api::CoomerApi::new()?;
     let creators = api.creators_cached().await?;
     let creators_len = creators.len();
@@ -171,7 +165,10 @@ pub async fn random(ctx: Context<'_>) -> Result<(), Error> {
             creator_icon_url,
         );
 
-        ctx.send_embed(embed).await?;
+        //ctx.send_embed(embed).await?;
+        msg_handle
+            .edit(ctx, poise::CreateReply::default().embed(embed))
+            .await?;
 
         return Ok(());
     }

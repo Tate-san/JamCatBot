@@ -1,4 +1,4 @@
-use crate::music::types::TrackInfo;
+use crate::{music::types::TrackInfo, utils::get_total_pages};
 
 use super::prelude::*;
 
@@ -19,7 +19,8 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     let select_menu_id = format!("{ctx_id}select_menu");
 
     let mut current_page: usize = 0;
-    let total_pages = (current_queue.len() / PAGE_ITEMS_COUNT) + 1;
+    // Substracted by 1 to ignore the current playing song
+    let total_pages = get_total_pages(current_queue.len() - 1, PAGE_ITEMS_COUNT);
 
     let reply = poise::CreateReply::default().embed(messages::factory::create_queue_list_embed(
         current_queue,
@@ -36,7 +37,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
         serenity::CreateSelectMenu::new(
             select_menu_id.clone(),
             serenity::CreateSelectMenuKind::String {
-                options: create_menu_options(total_pages.clone()),
+                options: create_menu_options(total_pages),
             },
         ),
     )]))
@@ -56,7 +57,8 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
         }
 
         let current_queue = current_queue_tracks(&ctx).await?;
-        let total_pages = (current_queue.len() / PAGE_ITEMS_COUNT) + 1;
+        // Substracted by 1 to ignore the current playing song
+        let total_pages = get_total_pages(current_queue.len() - 1, PAGE_ITEMS_COUNT);
 
         press
             .create_response(
@@ -103,15 +105,14 @@ async fn current_queue_tracks(ctx: &Context<'_>) -> Result<Vec<TrackInfo>, Error
 
     let mut tracks = vec![];
 
-    for (idx, track) in handle.queue().current_queue().iter().enumerate() {
+    for track in handle.queue().current_queue().iter() {
         let typemap = track.typemap().read().await;
 
-        let track_info = typemap
-            .get::<TrackInfo>()
-            .expect("Should be known at this point")
-            .clone();
-
-        tracks.push(track_info.clone());
+        if let Some(track_info) = typemap.get::<TrackInfo>() {
+            tracks.push(track_info.clone());
+        } else {
+            tracing::warn!("Found track without TrackInfo");
+        }
     }
 
     Ok(tracks)

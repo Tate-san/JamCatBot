@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use serenity::all::{ChannelId, CreateMessage, Http};
 use songbird::events::{Event, EventContext, EventHandler as VoiceEventHandler};
@@ -33,7 +33,7 @@ pub struct TrackPlayNotifier {
 impl VoiceEventHandler for TrackPlayNotifier {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
         if let EventContext::Track(track_list) = ctx {
-            let (state, handle) = track_list.get(0).expect("Track is expected to be present");
+            let (state, handle) = track_list.first().expect("Track is expected to be present");
             tracing::info!("Starting song: {}", handle.uuid());
 
             let typemap = handle.typemap().read().await;
@@ -45,7 +45,7 @@ impl VoiceEventHandler for TrackPlayNotifier {
                     .send_message(
                         self.http.clone(),
                         CreateMessage::new()
-                            .add_embed(messages::factory::create_now_playing_embed(info.clone())),
+                            .add_embed(messages::factory::create_now_playing_embed(info, state)),
                     )
                     .await;
             }

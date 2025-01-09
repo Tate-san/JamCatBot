@@ -4,7 +4,7 @@ use crate::music;
 #[poise::command(prefix_command, guild_only, aliases("v"), category = "Music")]
 pub async fn volume(ctx: Context<'_>, volume: Option<f32>) -> Result<(), Error> {
     let guild = ctx.guild().unwrap().clone();
-    let guild_id = guild.id.clone();
+    let guild_id = guild.id;
 
     if volume.is_none() {
         if let Some(cache) = ctx.data().guild_cache.lock().await.get(&guild_id) {
@@ -14,7 +14,6 @@ pub async fn volume(ctx: Context<'_>, volume: Option<f32>) -> Result<(), Error> 
         return Ok(());
     }
 
-    let manager = &ctx.data().songbird;
     let call = ctx.get_bot_call().await;
     let has_handler = call.is_ok();
 
@@ -49,7 +48,7 @@ pub async fn volume(ctx: Context<'_>, volume: Option<f32>) -> Result<(), Error> 
 
         let volume = volume.expect("Should be valid at this point");
 
-        music::set_volume(&ctx, volume.clone()).await?;
+        music::set_volume(&ctx, volume).await?;
 
         ctx.send_message(Message::Success(format!(
             "Volume has been changed to {volume}%"

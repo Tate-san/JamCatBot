@@ -7,7 +7,7 @@ pub struct GuildCache {
 
 impl Default for GuildCache {
     fn default() -> Self {
-        Self { volume: 100.0 }
+        Self { volume: 2.0 }
     }
 }
 

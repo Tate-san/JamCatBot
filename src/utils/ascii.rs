@@ -1,6 +1,6 @@
 use rand::Rng;
 
-const BRAINROT: &'static [&'static str] = &[
+const BRAINROT: &[&str] = &[
     "ඞyou are gඞy",
     "𝖜𝖔𝖒𝖕 𝖜𝖔𝖒𝖕",
     "𝗖𝗘𝗢 𝗢𝗙 𝗢𝗛𝗜𝗢",

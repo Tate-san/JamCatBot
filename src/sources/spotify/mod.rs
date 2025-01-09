@@ -1,17 +1,16 @@
 mod tests;
 
-use crate::{types::*, utils::MUSIC_ONLY_SUFFIX};
+use crate::{constants::MUSIC_ONLY_SUFFIX, types::*};
 use lazy_static::lazy_static;
 use regex::Regex;
 use rspotify::{
     model::{
-        AlbumId, FullTrack, Id, PlayableItem, PlaylistId, SimplifiedArtist, SimplifiedTrack,
-        TrackId,
+        AlbumId, FullTrack, PlayableItem, PlaylistId, SimplifiedArtist, SimplifiedTrack, TrackId,
     },
     prelude::BaseClient,
     ClientCredsSpotify, Credentials,
 };
-use serenity::futures::{StreamExt, TryStreamExt};
+use serenity::futures::TryStreamExt;
 use std::{env, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -62,9 +61,8 @@ impl Spotify {
 
     pub async fn get_track_keywords(&self, id: &str) -> Result<String, Error> {
         let track = self.get_track(id).await?;
-        let artists = Self::join_artists(&track.artists);
 
-        Ok(Self::build_keyword_topic(&track))
+        Ok(Self::build_track_keyword_topic(&track.name, &track.artists))
     }
 
     pub async fn get_playlist_tracks(&self, id: &str) -> Result<Vec<FullTrack>, Error> {
@@ -92,11 +90,11 @@ impl Spotify {
 
         Ok(tracks
             .iter()
-            .map(|x| Self::build_keyword_topic(&x))
+            .map(|x| Self::build_track_keyword_topic(&x.name, &x.artists))
             .collect())
     }
 
-    pub async fn get_album_tracks(&self, id: &str) -> Result<Vec<FullTrack>, Error> {
+    pub async fn get_album_tracks(&self, id: &str) -> Result<Vec<SimplifiedTrack>, Error> {
         let client = match &self.client {
             Some(client) => client,
             None => return Err(BotError::AuthError),
@@ -106,15 +104,10 @@ impl Spotify {
 
         let album_id = AlbumId::from_id(id).map_err(|e| BotError::Generic(e.to_string()))?;
         let mut album = client.album_track(album_id, None);
-        // TODO
-        /*
-        while let Ok(Some(item)) = album.try_next().await {
-            SimplifiedTrack
-            if let Some(PlayableItem::Track(track)) = item.track {
-                tracks.push(track.clone());
-            }
+
+        while let Ok(Some(track)) = album.try_next().await {
+            tracks.push(track);
         }
-        */
 
         Ok(tracks)
     }
@@ -124,7 +117,7 @@ impl Spotify {
 
         Ok(tracks
             .iter()
-            .map(|x| Self::build_keyword_topic(&x))
+            .map(|x| Self::build_track_keyword_topic(&x.name, &x.artists))
             .collect())
     }
 
@@ -150,19 +143,19 @@ impl Spotify {
             "playlist" => {
                 QueryType::KeywordsList(self.get_playlist_tracks_keywords(media_id).await?)
             }
-            _ => return Err(BotError::Generic("Not supported yet".to_string())),
+            "album" => QueryType::KeywordsList(self.get_album_tracks_keywords(media_id).await?),
+            _ => return Err(BotError::Generic("Invalid Spotify URL".to_string())),
         })
     }
 
-    fn build_keyword(track: &FullTrack) -> String {
-        let artists = Self::join_artists(&track.artists);
-        let title = track.name.to_string();
+    fn build_track_keyword(name: &str, artists: &[SimplifiedArtist]) -> String {
+        let artists = Self::join_artists(artists);
 
-        format!("{artists} - {title}")
+        format!("{artists} - {name}")
     }
 
-    fn build_keyword_topic(track: &FullTrack) -> String {
-        let keyword = Self::build_keyword(track);
+    fn build_track_keyword_topic(name: &str, artists: &[SimplifiedArtist]) -> String {
+        let keyword = Self::build_track_keyword(name, artists);
         format!("{keyword} {MUSIC_ONLY_SUFFIX}")
     }
 

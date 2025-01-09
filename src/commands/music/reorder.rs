@@ -1,5 +1,3 @@
-use std::{arch::x86_64::_SIDD_CMP_RANGES, sync::Arc};
-
 use super::prelude::*;
 use crate::music::types::TrackInfo;
 
@@ -61,7 +59,7 @@ pub async fn remove(ctx: Context<'_>, index: usize, range: Option<usize>) -> Res
         .unwrap()
         .clone();
 
-    let _range = range.clone().unwrap_or(1);
+    let _range = range.unwrap_or(1);
 
     if _range < 1 {
         return Err(BotError::Generic(

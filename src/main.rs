@@ -1,5 +1,7 @@
 mod api;
 mod commands;
+mod constants;
+mod database;
 pub mod error;
 mod handlers;
 pub mod messages;
@@ -12,14 +14,21 @@ mod utils;
 mod voice;
 
 use prelude::*;
+use sqlx::{migrate::Migrator, sqlite::SqlitePool};
 use std::{env, sync::Arc};
 use tokio::sync::Mutex;
 use types::guild::GuildCacheMap;
 
+static MIGRATOR: Migrator = sqlx::migrate!();
+
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().expect("Failed to load .env file");
     tracing_subscriber::fmt::init();
+
+    let database_url = env::var("DATABASE_URL").expect("Missing DATABASE_URL var");
+    let pool = SqlitePool::connect(&format!("sqlite://{database_url}?mode=rwc")).await?;
+    MIGRATOR.run(&pool).await?;
 
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let intents = serenity::GatewayIntents::all();
@@ -55,6 +64,14 @@ async fn main() {
                 commands::music::queue(),
                 commands::music::queue_move(),
                 commands::music::remove(),
+                commands::music::now_playing(),
+                //commands::music::seek(),
+                commands::music::loops(),
+                commands::music::resume(),
+                commands::music::pause(),
+                commands::music::join(),
+                commands::music::leave(),
+                commands::fun::video(),
             ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some(".".into()),
@@ -78,6 +95,7 @@ async fn main() {
                         .expect("Failed to build reqwest client"),
                     songbird: manager_clone,
                     guild_cache: Arc::new(Mutex::new(GuildCacheMap::default())),
+                    pool: Arc::new(Mutex::new(pool)),
                 })
             })
         })
@@ -86,8 +104,9 @@ async fn main() {
     let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .voice_manager_arc(manager)
-        .await
-        .unwrap();
+        .await?;
 
-    client.start().await.unwrap();
+    client.start().await?;
+
+    anyhow::Ok(())
 }

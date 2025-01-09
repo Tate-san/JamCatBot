@@ -74,7 +74,7 @@ impl Display for Message {
         match self {
             Self::Success(message) => f.write_str(&format!("✅ **{message}**")),
             Self::Error(message) => f.write_str(&format!("❗ **{message}**")),
-            Self::Other(message) => f.write_str(&message),
+            Self::Other(message) => f.write_str(message),
             _ => f.write_str(""),
         }
     }
@@ -114,6 +114,6 @@ impl From<Message> for CreateEmbed {
     fn from(value: Message) -> Self {
         CreateEmbed::new()
             .colour::<Colour>((&value).into())
-            .description(&value.to_string())
+            .description(value.to_string())
     }
 }

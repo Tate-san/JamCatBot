@@ -1,8 +1,8 @@
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use uuid::Uuid;
 
 pub mod ascii;
-
-pub static MUSIC_ONLY_SUFFIX: &str = r#"\"topic\""#;
 
 pub fn duration_string(duration: Duration) -> String {
     let seconds = duration.as_secs() % 60;
@@ -14,4 +14,19 @@ pub fn duration_string(duration: Duration) -> String {
     } else {
         format!("{minutes:0>2}:{seconds:0>2}")
     }
+}
+
+pub fn get_total_pages(items_count: usize, items_per_page: usize) -> usize {
+    (items_count as f32 / items_per_page as f32).ceil() as usize
+}
+
+pub fn generate_filename() -> String {
+    let uuid = Uuid::new_v4();
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_millis();
+
+    format!("{uuid}_{timestamp}")
 }

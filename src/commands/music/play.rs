@@ -9,13 +9,8 @@ pub async fn play(
     #[description = "URL or keywords to search by"]
     query: String,
 ) -> Result<(), Error> {
-    if let Err(error) = voice::get_call_or_join(&ctx).await {
-        return Err(error.into());
-    };
-
-    if let Err(error) = music::play_track(&ctx, query).await {
-        return Err(error.into());
-    }
+    voice::get_call_or_join(&ctx, false).await?;
+    music::play_track(&ctx, query).await?;
 
     Ok(())
 }

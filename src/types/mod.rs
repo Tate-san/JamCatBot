@@ -10,6 +10,7 @@ pub struct Data {
     pub http: reqwest_old::Client,
     pub songbird: Arc<songbird::Songbird>,
     pub guild_cache: Arc<Mutex<GuildCacheMap>>,
+    pub pool: Arc<Mutex<sqlx::SqlitePool>>,
 }
 
 pub type Error = BotError;

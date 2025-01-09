@@ -16,16 +16,7 @@ reqwest_old = { version = "=0.11", default-features = false, package = "reqwest"
     "rustls-tls",
     "cookies",
 ] }
-reqwest = { version = "0.12.5", features = [
-    "blocking",
-    "json",
-    "multipart",
-    "rustls-tls",
-    "cookies",
-    "charset",
-    "http2",
-    "macos-system-configuration",
-] }
+reqwest = { version = "0.12.5", features = ["blocking", "json", "multipart", "rustls-tls", "cookies", "charset", "http2", "macos-system-configuration"] }
 songbird = { version = "0.4.3", features = [
     "driver",
     "gateway",
@@ -50,3 +41,6 @@ lazy_static = "1.5.0"
 regex = "1.10.6"
 thiserror = "1.0.64"
 url = "2.5.2"
+sqlx = { version = "0.8.2", features = ["runtime-tokio", "sqlite"] }
+features = "0.10.0"
+uuid = "1.11.0"

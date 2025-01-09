@@ -6,6 +6,8 @@ pub enum MusicError {
     SearchNotFound,
     #[error("Invalid link")]
     InvalidLink,
+    #[error("[Track]({0}) is unavailable")]
+    Unavailable(String),
     #[error(
         "Unable to fetch track.
         Prolly youtube is blocking me again due to too many requests.
