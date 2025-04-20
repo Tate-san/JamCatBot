@@ -1,0 +1,20 @@
+[package]
+name = "jamcat"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+jamcat_core = { workspace = true }
+jamcat_commands = { workspace = true }
+jamcat_utils = { workspace = true }
+jamcat_music = { workspace = true }
+jamcat_common = { workspace = true }
+dotenv = { workspace = true }
+poise = { workspace = true }
+serenity = { workspace = true }
+songbird = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+reqwest = { workspace = true }

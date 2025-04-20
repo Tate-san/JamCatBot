@@ -1,0 +1,1 @@
+pub static TMP_DIR: &str = "/tmp";

@@ -1,0 +1,24 @@
+[package]
+name = "jamcat_music"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+jamcat_core = { workspace = true }
+jamcat_common = { workspace = true }
+jamcat_utils = { workspace = true }
+jamcat_error = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+lazy_static = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true }
+url = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+poise = { workspace = true }
+serenity = { workspace = true }
+songbird = { workspace = true }
+symphonia = { workspace = true }
+tokio = { workspace = true }
+rspotify = { workspace = true }

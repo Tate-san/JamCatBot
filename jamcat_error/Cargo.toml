@@ -1,0 +1,13 @@
+[package]
+name = "jamcat_error"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = { workspace=true }
+rspotify = { workspace=true }
+sqlx = { workspace=true }
+serde_json = { workspace=true }
+serenity = { workspace=true }
+songbird = { workspace=true }
+reqwest = { workspace=true }

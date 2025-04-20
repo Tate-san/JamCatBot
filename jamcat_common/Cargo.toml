@@ -1,0 +1,15 @@
+[package]
+name = "jamcat_common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+jamcat_error = { workspace = true}
+jamcat_utils = { workspace = true}
+serde_json = { workspace = true }
+serenity = { workspace = true }
+songbird = { workspace = true }
+poise = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
