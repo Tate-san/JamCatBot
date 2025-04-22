@@ -23,8 +23,8 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
 
         let queue = ctx.get_queue().await?;
 
-        let call = manager.get(guild_id).unwrap();
-        let call_queue = manager.get(guild_id).unwrap();
+        let call = manager.get(guild_id).ok_or(Error::BotNotInVoice)?;
+        let call_queue = manager.get(guild_id).ok_or(Error::BotNotInVoice)?;
         let call_lock = call.lock().await;
 
         let user_channel = user_voice_state.channel_id.unwrap();
