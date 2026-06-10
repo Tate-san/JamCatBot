@@ -1,0 +1,105 @@
+{
+  "common": {
+    "error": "⚠️ Something went wrong.",
+    "guildOnly": "🏰 This command can only be used in a server.",
+    "unknownCommand": "❓ Unknown command.",
+    "noPermission": "🚫 You do not have permission to use this command.",
+    "working": "⏳ Working...",
+    "done": "✅ Done.",
+    "prefixCommandHint": "💡 Use slash commands or prefix commands. Try `/help`, `/play`, or your server prefix.",
+    "notYourControl": "🔒 Only the person who requested this can use these buttons."
+  },
+  "errors": {
+    "GUILD_ONLY": "🏰 This command can only be used in a server.",
+    "NO_PERMISSION": "🚫 You do not have permission to use this command.",
+    "USER_NOT_IN_VOICE": "🎙️ You need to be in a voice channel.",
+    "BOT_CANNOT_CONNECT": "🔌 I cannot connect to that voice channel.",
+    "BOT_CANNOT_SPEAK": "🔇 I cannot speak in that voice channel.",
+    "NO_QUEUE": "📭 There is no active queue.",
+    "NOT_CONNECTED": "👋 I am not connected to a voice channel.",
+    "INVALID_POSITION": "🔢 Invalid queue position.",
+    "INVALID_TIME": "⏱️ Invalid time value.",
+    "SHITPOST_FAILED": "💥 Could not process that media.",
+    "MISSING_ATTACH_FILES": "📎 I need permission to attach files in this channel."
+  },
+  "music": {
+    "play": {
+      "searching": "🔎 Searching for `{query}`...",
+      "queued": "➕ Queued: **{title}**",
+      "playing": "🎶 Now playing: **{title}**",
+      "failed": "💥 Could not play that track."
+    },
+    "queue": {
+      "empty": "📭 The queue is empty.",
+      "title": "🎼 Music queue",
+      "line": "{position}. **{title}** — `{duration}`",
+      "summary": "📚 `{count}` track(s) waiting after the current song.",
+      "nowPlaying": "🎶 Now playing",
+      "upNext": "⏭️ Up next",
+      "noUpcoming": "🌙 Nothing else is queued.",
+      "page": "📄 Page {page}/{pages}"
+    },
+    "nowplaying": {
+      "none": "🌙 Nothing is currently playing.",
+      "title": "🎶 Now playing",
+      "progress": "⏱️ {current} / {total}",
+      "unknownTitle": "❔ Unknown track"
+    },
+    "skip": {
+      "success": "⏭️ Skipped current track.",
+      "empty": "📭 There is nothing to skip."
+    },
+    "stop": {
+      "success": "⏹️ Stopped playback and cleared the queue."
+    },
+    "volume": {
+      "changed": "🔊 Music volume changed to `{volume}%`."
+    },
+    "loop": {
+      "changed": "🔁 Loop mode set to `{mode}`."
+    },
+    "seek": {
+      "success": "⏱️ Seeked to `{time}`.",
+      "invalid": "⚠️ Invalid seek time."
+    },
+    "move": {
+      "success": "🔀 Moved track from position `{from}` to `{to}`.",
+      "invalid": "🔢 Invalid queue positions."
+    },
+    "leave": {
+      "success": "👋 Left the voice channel.",
+      "notConnected": "📭 I am not connected to a voice channel."
+    },
+    "idle": {
+      "leaving": "💤 Leaving voice channel because I have been idle."
+    }
+  },
+  "settings": {
+    "show": {
+      "title": "⚙️ Server settings",
+      "empty": "📭 No settings found.",
+      "page": "📄 Page {page}/{pages}"
+    },
+    "prefix": {
+      "changed": "✅ Prefix changed to `{prefix}`."
+    },
+    "volume": {
+      "changed": "🔊 Default music volume changed to `{volume}%`."
+    },
+    "language": {
+      "changed": "🌐 Language changed to `{language}`."
+    },
+    "idleLeave": {
+      "enabled": "💤 Idle leave enabled. Timeout: `{seconds}` seconds.",
+      "disabled": "☕ Idle leave disabled."
+    }
+  },
+  "shitpost": {
+    "downloading": "⬇️ Downloading media...",
+    "checkingSize": "📏 Checking file size...",
+    "compressing": "🗜️ File is larger than 10 MB. Compressing...",
+    "uploading": "⬆️ Uploading...",
+    "done": "✅ Here you go.",
+    "failed": "💥 Could not process that media."
+  }
+}

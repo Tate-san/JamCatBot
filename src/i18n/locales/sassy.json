@@ -1,0 +1,105 @@
+{
+  "common": {
+    "error": "⚠️ Something broke, darling. Try not to panic, good boy.",
+    "guildOnly": "🏰 This only works in a server, sweetheart. Don't make mommy repeat herself.",
+    "unknownCommand": "❓ Unknown command, silly little thing. Try `/help`.",
+    "noPermission": "🚫 You don't have permission for that, brat. Behave.",
+    "working": "⏳ Mommy's working on it... be patient, good boy.",
+    "done": "✅ Done. See? Mommy handles it.",
+    "prefixCommandHint": "💡 Use `/help`, `/play`, or your prefix command, darling.",
+    "notYourControl": "🔒 Hands off, brat. These buttons belong to someone else."
+  },
+  "errors": {
+    "GUILD_ONLY": "🏰 Server only, sweetheart. This isn't your little DM playground.",
+    "NO_PERMISSION": "🚫 No permission, brat. Ask nicely next time.",
+    "USER_NOT_IN_VOICE": "🎙️ Get in a voice channel first, good boy.",
+    "BOT_CANNOT_CONNECT": "🔌 I can't connect to that voice channel, darling.",
+    "BOT_CANNOT_SPEAK": "🔇 I can't speak there. Rude, honestly.",
+    "NO_QUEUE": "📭 There's no queue, silly. Nothing for mommy to control.",
+    "NOT_CONNECTED": "👋 I'm not in a voice channel, sweetheart.",
+    "INVALID_POSITION": "🔢 That queue position is nonsense, brat.",
+    "INVALID_TIME": "⏱️ That time is invalid, darling. Try using your brain just a little.",
+    "SHITPOST_FAILED": "💥 Couldn't process that media. Tragic, truly.",
+    "MISSING_ATTACH_FILES": "📎 I need attach-file permission, sweetheart. Give mommy the tools."
+  },
+  "music": {
+    "play": {
+      "searching": "🔎 Looking for `{query}`... sit still, good boy.",
+      "queued": "➕ Queued: **{title}**. You're welcome, darling.",
+      "playing": "🎶 Now playing: **{title}**. Good taste... maybe.",
+      "failed": "💥 Couldn't play that track. Bad link, bad luck, bad boy."
+    },
+    "queue": {
+      "empty": "📭 The queue is empty, sweetheart. Feed mommy some songs.",
+      "title": "🎼 Mommy's music queue",
+      "line": "{position}. **{title}** — `{duration}`",
+      "summary": "📚 `{count}` track(s) waiting. Such a needy little queue.",
+      "nowPlaying": "🎶 Now playing",
+      "upNext": "⏭️ Up next, darling",
+      "noUpcoming": "🌙 Nothing else queued. Lonely, isn't it?",
+      "page": "📄 Page {page}/{pages}"
+    },
+    "nowplaying": {
+      "none": "🌙 Nothing is playing, sweetheart. Silence. Embarrassing.",
+      "title": "🎶 Now playing, darling",
+      "progress": "⏱️ {current} / {total}",
+      "unknownTitle": "❔ Some mysterious little track"
+    },
+    "skip": {
+      "success": "⏭️ Skipped it. Mommy saved your ears.",
+      "empty": "📭 Nothing to skip, silly."
+    },
+    "stop": {
+      "success": "⏹️ Stopped playback and cleaned the queue. Good boy."
+    },
+    "volume": {
+      "changed": "🔊 Volume set to `{volume}%`. Try not to blow your ears out, brat."
+    },
+    "loop": {
+      "changed": "🔁 Loop mode is `{mode}` now, darling."
+    },
+    "seek": {
+      "success": "⏱️ Seeked to `{time}`. Mommy found the spot.",
+      "invalid": "⚠️ Invalid seek time, sweetheart. Try again properly."
+    },
+    "move": {
+      "success": "🔀 Moved track from `{from}` to `{to}`. Organized, like you should be.",
+      "invalid": "🔢 Those positions are wrong, brat."
+    },
+    "leave": {
+      "success": "👋 Left the voice channel. Don't miss me too much.",
+      "notConnected": "📭 I'm not connected, sweetheart. Keep up."
+    },
+    "idle": {
+      "leaving": "💤 I'm leaving because you left me idle. Rude little thing."
+    }
+  },
+  "settings": {
+    "show": {
+      "title": "⚙️ Server settings, darling",
+      "empty": "📭 No settings found. Barely anything to work with.",
+      "page": "📄 Page {page}/{pages}"
+    },
+    "prefix": {
+      "changed": "✅ Prefix changed to `{prefix}`. Good boy, learning already."
+    },
+    "volume": {
+      "changed": "🔊 Default volume changed to `{volume}%`. Mommy approves."
+    },
+    "language": {
+      "changed": "🌐 Language changed to `{language}`. Fancy, aren't we?"
+    },
+    "idleLeave": {
+      "enabled": "💤 Idle leave enabled. Timeout: `{seconds}` seconds. Don't waste mommy's time.",
+      "disabled": "☕ Idle leave disabled. Fine, I'll stay."
+    }
+  },
+  "shitpost": {
+    "downloading": "⬇️ Downloading your little media mess...",
+    "checkingSize": "📏 Checking the size. Yes, size matters here, darling.",
+    "compressing": "🗜️ Too big. Mommy's squeezing it down.",
+    "uploading": "⬆️ Uploading it now. Be patient, good boy.",
+    "done": "✅ There. Try to say thank you, sweetheart.",
+    "failed": "💥 Couldn't process that media. What did you give me, brat?"
+  }
+}
