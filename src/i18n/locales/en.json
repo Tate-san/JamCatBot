@@ -26,6 +26,8 @@
     "play": {
       "searching": "🔎 Searching for `{query}`...",
       "queued": "➕ Queued: **{title}**",
+      "playlistProgress": "📚 Queuing Spotify playlist: `{queued}` out of `{total}` — **{title}** (`{failed}` failed)...",
+      "playlistQueued": "✅ Queued Spotify playlist: `{queued}` out of `{total}` songs (`{failed}` failed).",
       "playing": "🎶 Now playing: **{title}**",
       "failed": "💥 Could not play that track."
     },

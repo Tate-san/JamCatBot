@@ -1,8 +1,8 @@
 import { DirectLinkPlugin } from "@distube/direct-link";
 import { SpotifyPlugin } from "@distube/spotify";
-import { YouTubePlugin } from "@distube/youtube";
 import type { Client } from "discord.js";
 import { DisTube } from "distube";
+import ffmpegPath from "ffmpeg-static";
 import { env } from "../../config/env.js";
 import { YtDlpExtractorPlugin } from "./ytDlpExtractorPlugin.js";
 
@@ -19,11 +19,13 @@ export function createDisTube(client: Client) {
   return new DisTube(client, {
     emitNewSongOnly: false,
     savePreviousSongs: true,
+    ffmpeg: {
+      path: env.FFMPEG_PATH ?? ffmpegPath ?? "ffmpeg"
+    },
     plugins: [
       new SpotifyPlugin({ api: spotifyApi }),
       new DirectLinkPlugin(),
-      new YtDlpExtractorPlugin(),
-      new YouTubePlugin()
+      new YtDlpExtractorPlugin()
     ]
   });
 }

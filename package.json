@@ -21,7 +21,8 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@distube/yt-dlp",
-      "better-sqlite3"
+      "better-sqlite3",
+      "ffmpeg-static"
     ]
   },
   "dependencies": {

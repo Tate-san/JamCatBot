@@ -1,18 +1,13 @@
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder
-} from "discord.js";
-import type { Queue, Song } from "distube";
-import { t } from "../../i18n/t.js";
-import { formatDuration } from "../../utils/duration.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
+import type { Queue, Song } from 'distube';
+import { t } from '../../i18n/t.js';
+import { formatDuration } from '../../utils/duration.js';
 
-export const NOW_PLAYING_PREVIOUS_BUTTON_ID = "nowplaying:previous";
-export const NOW_PLAYING_PLAY_PAUSE_BUTTON_ID = "nowplaying:play-pause";
-export const NOW_PLAYING_NEXT_BUTTON_ID = "nowplaying:next";
-export const NOW_PLAYING_STOP_BUTTON_ID = "nowplaying:stop";
-export const NOW_PLAYING_REFRESH_BUTTON_ID = "nowplaying:refresh";
+export const NOW_PLAYING_PREVIOUS_BUTTON_ID = 'nowplaying:previous';
+export const NOW_PLAYING_PLAY_PAUSE_BUTTON_ID = 'nowplaying:play-pause';
+export const NOW_PLAYING_NEXT_BUTTON_ID = 'nowplaying:next';
+export const NOW_PLAYING_STOP_BUTTON_ID = 'nowplaying:stop';
+export const NOW_PLAYING_REFRESH_BUTTON_ID = 'nowplaying:refresh';
 
 const BAR_SIZE = 22;
 
@@ -26,15 +21,13 @@ function truncate(value: string, maxLength: number) {
 
 function buildProgressBar(currentSeconds: number, totalSeconds: number) {
   if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
-    return "🔴 LIVE";
+    return '🔴 LIVE';
   }
 
   const progress = clamp(currentSeconds / totalSeconds, 0, 1);
   const markerIndex = clamp(Math.floor(progress * BAR_SIZE), 0, BAR_SIZE - 1);
 
-  return `${"─".repeat(markerIndex)}🔘${"─".repeat(
-    BAR_SIZE - markerIndex - 1
-  )}`;
+  return `${'─'.repeat(markerIndex)}🔘${'─'.repeat(BAR_SIZE - markerIndex - 1)}`;
 }
 
 function getYouTubeVideoId(url: string | undefined) {
@@ -43,12 +36,12 @@ function getYouTubeVideoId(url: string | undefined) {
   try {
     const parsed = new URL(url);
 
-    if (parsed.hostname === "youtu.be") {
-      return parsed.pathname.split("/").filter(Boolean)[0];
+    if (parsed.hostname === 'youtu.be') {
+      return parsed.pathname.split('/').filter(Boolean)[0];
     }
 
-    if (parsed.hostname.includes("youtube.com")) {
-      return parsed.searchParams.get("v") ?? undefined;
+    if (parsed.hostname.includes('youtube.com')) {
+      return parsed.searchParams.get('v') ?? undefined;
     }
   } catch {
     return undefined;
@@ -69,7 +62,7 @@ function getSongImage(song: Song | undefined) {
 }
 
 export function buildNowPlayingEmbed(queue: Queue, language: string, song = queue.songs[0]) {
-  const title = song?.name ?? t(language, "music.nowplaying.unknownTitle");
+  const title = song?.name ?? t(language, 'music.nowplaying.unknownTitle');
   const totalSeconds = song?.duration ?? 0;
   const currentSeconds =
     totalSeconds > 0
@@ -81,8 +74,7 @@ export function buildNowPlayingEmbed(queue: Queue, language: string, song = queu
       ? `${formatDuration(currentSeconds)} / ${formatDuration(totalSeconds)}`
       : formatDuration(currentSeconds);
 
-  const loopLabel =
-    queue.repeatMode === 0 ? "Off" : queue.repeatMode === 1 ? "Once" : "On";
+  const loopLabel = queue.repeatMode === 0 ? 'Off' : queue.repeatMode === 1 ? 'Once' : 'On';
 
   const embed = new EmbedBuilder()
     .setColor(0xff7ac8)
@@ -90,15 +82,15 @@ export function buildNowPlayingEmbed(queue: Queue, language: string, song = queu
     .setDescription(`${progressBar}  \`${timeLabel}\``)
     .addFields(
       {
-        name: "Volume",
+        name: 'Volume',
         value: `\`${queue.volume}%\``,
-        inline: true
+        inline: true,
       },
       {
-        name: "Loop",
+        name: 'Loop',
         value: `\`${loopLabel}\``,
-        inline: true
-      }
+        inline: true,
+      },
     );
 
   const image = getSongImage(song);
@@ -111,15 +103,15 @@ export function buildNowPlayingEmbed(queue: Queue, language: string, song = queu
 
 export function buildNowPlayingComponents(queue: Queue | undefined, forceDisabled = false) {
   const disabled = forceDisabled || !queue || queue.stopped;
-  const playPauseEmoji = queue?.paused ? "▶️" : "⏸️";
-  const playPauseLabel = queue?.paused ? "Play" : "Pause";
+  const playPauseEmoji = queue?.paused ? '▶️' : '⏸️';
+  const playPauseLabel = queue?.paused ? 'Play' : 'Pause';
 
   return [
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(NOW_PLAYING_PREVIOUS_BUTTON_ID)
-        .setEmoji("⏮️")
-        .setLabel("Prev")
+        .setEmoji('⏮️')
+        .setLabel('Prev')
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(disabled),
       new ButtonBuilder()
@@ -130,22 +122,22 @@ export function buildNowPlayingComponents(queue: Queue | undefined, forceDisable
         .setDisabled(disabled),
       new ButtonBuilder()
         .setCustomId(NOW_PLAYING_NEXT_BUTTON_ID)
-        .setEmoji("⏭️")
-        .setLabel("Next")
+        .setEmoji('⏭️')
+        .setLabel('Next')
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(disabled),
       new ButtonBuilder()
         .setCustomId(NOW_PLAYING_STOP_BUTTON_ID)
-        .setEmoji("⏹️")
-        .setLabel("Stop")
+        .setEmoji('⏹️')
+        .setLabel('Stop')
         .setStyle(ButtonStyle.Danger)
         .setDisabled(disabled),
       new ButtonBuilder()
         .setCustomId(NOW_PLAYING_REFRESH_BUTTON_ID)
-        .setEmoji("🔄")
-        .setLabel("Refresh")
+        .setEmoji('🔄')
+        .setLabel('Refresh')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(disabled)
-    )
+        .setDisabled(disabled),
+    ),
   ];
 }

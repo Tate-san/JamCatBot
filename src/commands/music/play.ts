@@ -25,11 +25,23 @@ export const playCommand: BotCommand = {
 
     await progress.set(t(language, "music.play.searching", { query }));
 
-    await musicService.play({
+    const result = await musicService.play({
       interaction,
       query,
-      volume: settings.musicVolume
+      volume: settings.musicVolume,
+      onProgress: (playlist) =>
+        progress.set(
+          t(
+            language,
+            playlist.done
+              ? "music.play.playlistQueued"
+              : "music.play.playlistProgress",
+            playlist
+          )
+        )
     });
+
+    if (result.kind === "playlist") return;
 
     const queue = musicService.getQueue(interaction.guildId!);
     const currentSong = queue?.songs.at(-1) ?? queue?.songs[0];
@@ -54,11 +66,23 @@ export const playCommand: BotCommand = {
       t(language, "music.play.searching", { query })
     );
 
-    await musicService.playFromMessage({
+    const result = await musicService.playFromMessage({
       message,
       query,
-      volume: settings.musicVolume
+      volume: settings.musicVolume,
+      onProgress: (playlist) =>
+        progress.edit(
+          t(
+            language,
+            playlist.done
+              ? "music.play.playlistQueued"
+              : "music.play.playlistProgress",
+            playlist
+          )
+        )
     });
+
+    if (result.kind === "playlist") return;
 
     const queue = musicService.getQueue(message.guildId!);
     const currentSong = queue?.songs.at(-1) ?? queue?.songs[0];

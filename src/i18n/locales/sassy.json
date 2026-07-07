@@ -26,6 +26,8 @@
     "play": {
       "searching": "🔎 Looking for `{query}`... sit still, good boy.",
       "queued": "➕ Queued: **{title}**. You're welcome, darling.",
+      "playlistProgress": "📚 Queuing your Spotify pile: `{queued}` out of `{total}` — **{title}** (`{failed}` failed)... be patient, good boy.",
+      "playlistQueued": "✅ Spotify playlist queued: `{queued}` out of `{total}` songs (`{failed}` failed). Mommy handled it.",
       "playing": "🎶 Now playing: **{title}**. Good taste... maybe.",
       "failed": "💥 Couldn't play that track. Bad link, bad luck, bad boy."
     },

@@ -1,6 +1,6 @@
-import type { DisTube } from "distube";
-import { logger } from "../../logging/logger.js";
-import { guildSettingsService } from "../guildSettings/guildSettingsService.js";
+import type { DisTube } from 'distube';
+import { logger } from '../../logging/logger.js';
+import { guildSettingsService } from '../guildSettings/guildSettingsService.js';
 
 export class IdleLeaveService {
   private timers = new Map<string, NodeJS.Timeout>();
@@ -38,9 +38,9 @@ export class IdleLeaveService {
       const voice = this.distube.voices.get(guildId);
       voice?.leave();
 
-      logger.info({ guildId }, "Left voice channel due to idle timeout");
+      logger.info({ guildId }, 'Left voice channel due to idle timeout');
     } catch (error) {
-      logger.error({ err: error, guildId }, "Idle leave failed");
+      logger.error({ err: error, guildId }, 'Idle leave failed');
     } finally {
       this.timers.delete(guildId);
     }

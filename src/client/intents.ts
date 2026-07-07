@@ -1,10 +1,11 @@
-import { GatewayIntentBits, Partials } from "discord.js";
+import { GatewayIntentBits, Partials } from 'discord.js';
 
 export const botIntents = [
   GatewayIntentBits.Guilds,
   GatewayIntentBits.GuildMessages,
   GatewayIntentBits.GuildVoiceStates,
-  GatewayIntentBits.MessageContent
+  GatewayIntentBits.MessageContent,
+  GatewayIntentBits.DirectMessages,
 ];
 
 export const botPartials = [Partials.Channel, Partials.Message, Partials.Reaction];
